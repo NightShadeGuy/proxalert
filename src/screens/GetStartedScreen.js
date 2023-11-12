@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Text, Button, Dimensions } from "react-native";
+import { StyleSheet, View, Text, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native"; 
 import { useFonts } from "expo-font";
 import CustomButton from "../components/CustomButton";
@@ -23,20 +23,16 @@ const GetStartedScreen = () => {
           title="Register"
           style={button}
           textStyle={text}
+          textColor="#D64045"
           onPress={() => navigation.navigate("Register")}
         />
         <CustomButton
           title="Login"
           style={button}
           textStyle={text}
+          textColor="#D64045"
           onPress={() => navigation.navigate("Login")}
         />
-
-        {/* Temporary button to redirect in homepage */}
-        {/* <Button
-          title="Home"
-          onPress={() => navigation.navigate("Main")}
-        />  */}
       </View>
       <Text style={[text, { color: "white" }]}>THESIS APP | 2024</Text>
     </View>
