@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import ContactScreen from "../screens/ContactScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import HotlineScreen from "../screens/HotlineScreen";
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
@@ -28,8 +29,8 @@ const BottomTabs = () => {
                 }}
             />
             <Tab.Screen
-                name="Contact"
-                component={ContactScreen}
+                name="Hotliines"
+                component={HotlineScreen}
                 options={{
                     tabBarIcon: ({ focused }) =>
                         < Ionicons
@@ -40,8 +41,8 @@ const BottomTabs = () => {
                 }}
             />
             <Tab.Screen
-                name="Profile"
-                component={ProfileScreen}
+                name="Contact"
+                component={ContactScreen}
                 options={{
                     tabBarIcon: ({ focused }) =>
                         <FontAwesome5
