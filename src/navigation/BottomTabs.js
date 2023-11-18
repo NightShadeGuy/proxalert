@@ -2,13 +2,12 @@ import React from "react";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import ContactScreen from "../screens/ContactScreen";
-import ProfileScreen from "../screens/ProfileScreen";
 import HotlineScreen from "../screens/HotlineScreen";
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = () => {
+const BottomTabs = ({ user, setUser }) => {
     return (
         <Tab.Navigator
             screenOptions={{
@@ -18,7 +17,6 @@ const BottomTabs = () => {
         >
             <Tab.Screen
                 name="Home"
-                component={HomeScreen}
                 options={{
                     tabBarIcon: ({ focused }) =>
                         <MaterialIcons
@@ -27,9 +25,11 @@ const BottomTabs = () => {
                             color={focused ? "#EB5757" : "#828282"}
                         />,
                 }}
-            />
+            >
+               {() => <HomeScreen user={user} setUser={setUser} />}
+            </Tab.Screen>
             <Tab.Screen
-                name="Hotliines"
+                name="Hotlines"
                 component={HotlineScreen}
                 options={{
                     tabBarIcon: ({ focused }) =>

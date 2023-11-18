@@ -25,13 +25,9 @@ const LoginScreen = () => {
   } = styles;
 
   const navigation = useNavigation();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  console.log("Email", email, "password", password);
-  console.log(auth);
 
   const [fontsLoaded] = useFonts({
     "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
@@ -46,7 +42,7 @@ const LoginScreen = () => {
     setLoading(true);
     try {
       // check if both input have characters
-      if(email && password) { 
+      if (email && password) {
         await signInWithEmailAndPassword(auth, email, password);
         navigation.navigate("Main");
         console.log(auth?.currentUser);
@@ -63,10 +59,11 @@ const LoginScreen = () => {
   return (
     <View style={container}>
       <View style={[section, { flexDirection: "row" }]}>
-        <Text style={[headerText, {
-          fontFamily: "NotoSans-SemiBold",
-          marginLeft: 10
-        }]}
+        <Text
+          style={[headerText, {
+            fontFamily: "NotoSans-SemiBold",
+            marginLeft: 10
+          }]}
         >
           LOGIN
         </Text>
