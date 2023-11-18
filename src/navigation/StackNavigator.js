@@ -14,45 +14,47 @@ const Stack = createNativeStackNavigator();
 const StackNavigator = () => {
   const [user, setUser] = useState(null);
 
-    useEffect(() => {
-      console.log("Effect run");
-      const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
-        if (userObserver) {
-          // User is signed in,
-          setUser(userObserver); 
-          console.log("User is signed in", user);
-        } else {
-          // User is signed out
-          console.log("User is logged out");
-        }
-      })
-  
-      // Cleanup the subscription when the component unmounts
-      return () => unsubscribe();
-    }, []) 
-  
+  useEffect(() => {
+    console.log("Effect run");
+    const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
+      if (userObserver) {
+        // User is signed in,
+        console.log("USER IS STILL LOGGED IN: ", user);
+        setUser(userObserver);
+      } else {
+        // User is signed out
+        console.log("USER IS LOGGED OUT");
+      }
+    })
 
+    // Cleanup the subscription when the component unmounts
+    return () => unsubscribe();
+  }, [user])
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Get Started"
+        initialRouteName={user ? "Main" : "Get Started"}
       >
-        <Stack.Screen
-          name="Get Started"
-          component={GetStartedScreen}
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="Main"
-          options={{
-            headerShown: false,
-          }}
-        >
-          {() => <BottomTabs user={user} setUser={setUser} />}
-        </Stack.Screen>
+        {!user && (
+          <Stack.Screen
+            name="Get Started"
+            component={GetStartedScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+        )}
+        {user && (
+          <Stack.Screen
+            name="Main"
+            options={{
+              headerShown: false,
+            }}
+          >
+            {() => <BottomTabs user={user} setUser={setUser} />}
+          </Stack.Screen>
+        )}
         <Stack.Screen
           name="Register"
           component={RegisterScreen}
@@ -62,11 +64,12 @@ const StackNavigator = () => {
         />
         <Stack.Screen
           name="Login"
-          component={LoginScreen}
           options={{
             headerShown: false,
           }}
-        />
+        >
+          {() => <LoginScreen user={user} setUser={setUser} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Settings"
           options={{

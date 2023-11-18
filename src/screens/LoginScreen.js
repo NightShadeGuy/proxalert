@@ -13,7 +13,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
 
-const LoginScreen = () => {
+const LoginScreen = ({ user, setUser }) => {
   const {
     container,
     headerText,
@@ -23,7 +23,6 @@ const LoginScreen = () => {
     button,
     section
   } = styles;
-
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,9 +42,10 @@ const LoginScreen = () => {
     try {
       // check if both input have characters
       if (email && password) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const currUser = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Login screen after signIn", currUser);
+        setUser(currUser);
         navigation.navigate("Main");
-        console.log(auth?.currentUser);
       } else {
         ToastAndroid.showWithGravity("Email and password must have any character.", 300, ToastAndroid.TOP);
       }
@@ -62,7 +62,7 @@ const LoginScreen = () => {
         <Text
           style={[headerText, {
             fontFamily: "NotoSans-SemiBold",
-            marginLeft: 10
+            marginLeft: 20
           }]}
         >
           LOGIN

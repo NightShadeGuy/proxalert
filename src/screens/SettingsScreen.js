@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ToastAndroid,
 } from 'react-native';
-import { auth } from "../config/firebase";
 import { updateProfile, updatePassword } from "firebase/auth";
 import { useFonts } from "expo-font";
 import { AntDesign } from '@expo/vector-icons';
@@ -31,9 +30,9 @@ const SettingsScreen = ({ user, setUser }) => {
   const [showInfo, setShowInfo] = useState(false);
   const [showChangePass, setShowChangePass] = useState(false);
 
-  const [username, setUsername] = useState(user.displayName);
-  const [photoUrl, setPhotoUrl] = useState(user.photoURL);
-  const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber);
+  const [username, setUsername] = useState(user?.displayName);
+  const [photoUrl, setPhotoUrl] = useState(user?.photoURL);
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 

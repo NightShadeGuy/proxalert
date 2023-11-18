@@ -43,8 +43,9 @@ const HomeScreen = ({ user, setUser }) => {
     setLoading(true);
     try {
       await signOut(auth);
-      ToastAndroid.showWithGravity("Successfully logged out", 300, ToastAndroid.TOP);
+      setUser(null);
       navigation.navigate("Get Started");
+      ToastAndroid.showWithGravity("User logged out successfully.", 300, ToastAndroid.TOP);
     } catch (err) {
       ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
     }
@@ -63,7 +64,7 @@ const HomeScreen = ({ user, setUser }) => {
               }
             ]}
           >
-            {user.displayName ? `Hello, ${user.displayName}!` : "Hey, User!"}
+            {user?.displayName ? `Hello, ${user?.displayName}!` : "Hey, User!"}
           </Text>
           <FontAwesome
             name="gear"
