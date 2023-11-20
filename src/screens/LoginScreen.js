@@ -4,14 +4,15 @@ import {
   TextInput,
   StyleSheet,
   Pressable,
-  ToastAndroid,
+  Modal,
 } from "react-native";
 import React, { useState } from "react";
 import { useFonts } from "expo-font";
 import { auth } from "../config/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
+import { toast } from "../../utils"
 
 const LoginScreen = ({ user, setUser }) => {
   const {
@@ -21,12 +22,15 @@ const LoginScreen = ({ user, setUser }) => {
     font,
     input,
     button,
-    section
+    section,
+    bottomView,
+    modalView
   } = styles;
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const [fontsLoaded] = useFonts({
     "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
@@ -47,10 +51,27 @@ const LoginScreen = ({ user, setUser }) => {
         setUser(currUser);
         navigation.navigate("Main");
       } else {
-        ToastAndroid.showWithGravity("Email and password must have any character.", 300, ToastAndroid.TOP);
+        toast("Email and password must contain any character.");
       }
     } catch (err) {
-      ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
+      toast(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const resetPassword = async () => {
+    setLoading(true);
+    try {
+      if (email) {
+        await sendPasswordResetEmail(auth, email);
+        setModalVisible(!modalVisible);
+        toast("You can now check your email to verify.");
+      } else {
+        toast("You must first enter your email address.");
+      }
+    } catch (err) {
+      toast(err.message);
     } finally {
       setLoading(false);
     }
@@ -60,8 +81,7 @@ const LoginScreen = ({ user, setUser }) => {
     <View style={container}>
       <View style={[section, { flexDirection: "row" }]}>
         <Text
-          style={[headerText, {
-            fontFamily: "NotoSans-SemiBold",
+          style={[headerText, font, {
             marginLeft: 20
           }]}
         >
@@ -88,7 +108,17 @@ const LoginScreen = ({ user, setUser }) => {
             secureTextEntry={true}
             onChangeText={value => setPassword(value)}
           />
+          <Text
+            style={[text, font, {
+              color: "#D64045",
+              textAlign: "right",
+            }]}
+            onPress={() => setModalVisible(!modalVisible)}
+          >
+            Forgot Password?
+          </Text>
         </View>
+
       </View>
 
       <View style={[section, { justifyContent: "flex-end", rowGap: 10 }]}>
@@ -115,6 +145,28 @@ const LoginScreen = ({ user, setUser }) => {
         </Pressable>
       </View>
 
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(!modalVisible)}
+      >
+        <View style={bottomView}>
+          <View style={modalView}>
+            <Text style={[text, font]}>
+              Would you really like to reset your password via email?
+            </Text>
+            <CustomButton
+              title="YES"
+              style={button}
+              textStyle={[text, font, { textAlign: "center", marginTop: 7 }]}
+              textColor="white"
+              loading={loading}
+              onPress={resetPassword}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -138,7 +190,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10
   },
   font: {
-    fontFamily: "NotoSans-Medium"
+    fontFamily: "NotoSans-SemiBold"
   },
   input: {
     padding: 10,
@@ -156,6 +208,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#D64045",
     borderRadius: 20,
     flexShrink: 0
+  },
+  bottomView: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.2)"
+  },
+  modalView: {
+    width: "100%",
+    backgroundColor: 'white',
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 })
 

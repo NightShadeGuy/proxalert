@@ -8,6 +8,7 @@ import BottomTabs from "./BottomTabs";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import MapScreen from "../screens/MapScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,11 +19,9 @@ const StackNavigator = () => {
     console.log("Effect run");
     const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
       if (userObserver) {
-        // User is signed in,
-        console.log("USER IS STILL LOGGED IN: ", user);
         setUser(userObserver);
+        console.log("USER IS STILL LOGGED IN: ", user);
       } else {
-        // User is signed out
         console.log("USER IS LOGGED OUT");
       }
     })
@@ -35,49 +34,47 @@ const StackNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName={user ? "Main" : "Get Started"}
+        screenOptions={{
+          headerShown: false
+        }}
       >
         {!user && (
           <Stack.Screen
             name="Get Started"
             component={GetStartedScreen}
-            options={{
-              headerShown: false,
-            }}
           />
         )}
         {user && (
-          <Stack.Screen
-            name="Main"
-            options={{
-              headerShown: false,
-            }}
-          >
+          <Stack.Screen name="Main">
             {() => <BottomTabs user={user} setUser={setUser} />}
           </Stack.Screen>
         )}
         <Stack.Screen
           name="Register"
           component={RegisterScreen}
-          options={{
-            headerShown: false,
-          }}
         />
-        <Stack.Screen
-          name="Login"
-          options={{
-            headerShown: false,
-          }}
-        >
+        <Stack.Screen name="Login">
           {() => <LoginScreen user={user} setUser={setUser} />}
         </Stack.Screen>
-        <Stack.Screen
-          name="Settings"
-          options={{
-            headerShown: false,
-          }}
-        >
+        <Stack.Screen name="Settings">
           {() => <SettingsScreen user={user} setUser={setUser} />}
         </Stack.Screen>
+        <Stack.Screen
+          name="Map"
+          component={MapScreen}
+          options={{
+            headerShown: true,
+            headerTitle: "NEED EMERGENCY ASSISTANCE?",
+            headerTitleStyle: {
+              color: "white",
+              fontSize: 16
+            },
+            headerStyle: {
+              backgroundColor: "#D64045",
+            },
+            headerTintColor: 'white'
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   )

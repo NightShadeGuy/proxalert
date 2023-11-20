@@ -45,7 +45,6 @@ const HomeScreen = ({ user, setUser }) => {
       await signOut(auth);
       setUser(null);
       navigation.navigate("Get Started");
-      ToastAndroid.showWithGravity("User logged out successfully.", 300, ToastAndroid.TOP);
     } catch (err) {
       ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
     }
@@ -87,7 +86,9 @@ const HomeScreen = ({ user, setUser }) => {
       </View>
 
       <View style={{ alignItems: "center" }}>
-        <Pressable>
+        <Pressable
+          onLongPress={() => navigation.navigate("Map")}
+        >
           <Image
             source={require("../../assets/images/request-btn.png")}
             style={image}

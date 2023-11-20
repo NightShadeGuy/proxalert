@@ -3,7 +3,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import ContactScreen from "../screens/ContactScreen";
 import HotlineScreen from "../screens/HotlineScreen";
-import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import {
+    MaterialIcons,
+    Ionicons,
+    FontAwesome5
+} from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
@@ -26,7 +30,7 @@ const BottomTabs = ({ user, setUser }) => {
                         />,
                 }}
             >
-               {() => <HomeScreen user={user} setUser={setUser} />}
+                {() => <HomeScreen user={user} setUser={setUser} />}
             </Tab.Screen>
             <Tab.Screen
                 name="Hotlines"

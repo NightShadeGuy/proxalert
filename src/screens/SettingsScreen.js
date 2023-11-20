@@ -8,12 +8,12 @@ import {
   Pressable,
   TextInput,
   TouchableOpacity,
-  ToastAndroid,
 } from 'react-native';
 import { updateProfile, updatePassword } from "firebase/auth";
 import { useFonts } from "expo-font";
 import { AntDesign } from '@expo/vector-icons';
 import { StatusBar } from 'react-native';
+import { toast } from "../../utils";
 
 const SettingsScreen = ({ user, setUser }) => {
   const {
@@ -54,7 +54,7 @@ const SettingsScreen = ({ user, setUser }) => {
         photoURL: photoUrl
       });
       setShowInfo(!showInfo);
-      ToastAndroid.showWithGravity("Successfully updated", 300, ToastAndroid.BOTTOM);
+      toast("Successfully updated");
     } catch (err) {
       console.error(err.message);
     }
@@ -62,15 +62,15 @@ const SettingsScreen = ({ user, setUser }) => {
 
   const changePassword = async () => {
     try {
-      if(newPassword === confirmNewPassword) {
+      if (newPassword === confirmNewPassword && newPassword.length >= 8) {
         updatePassword(user, newPassword);
         setShowChangePass(!showChangePass);
-        ToastAndroid.showWithGravity("Successfully updated", 300, ToastAndroid.BOTTOM);
+        toast("Successfully updated");
       } else {
-        ToastAndroid.showWithGravity("Your new password and confirm password doesn't match.", 300, ToastAndroid.TOP);
+        toast("Your new password and confirm password doesn't match.");
       }
-    } catch(err) {
-      ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
+    } catch (err) {
+      toast(err.message);
     }
   }
 

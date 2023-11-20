@@ -4,7 +4,7 @@
     "slug": "proxalert",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.jpg",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -15,16 +15,30 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyBZtpfw6f_NR2jF5Kolpc-L66t1z6zL6EY"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.deamn.proxalert",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBZtpfw6f_NR2jF5Kolpc-L66t1z6zL6EY"
+        }
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "83c88c18-f9b5-4b4f-8ca1-1fc39452f124"
+      }
     }
   }
 }
