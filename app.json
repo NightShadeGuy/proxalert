@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "config": {
-        "googleMapsApiKey": "AIzaSyBZtpfw6f_NR2jF5Kolpc-L66t1z6zL6EY"
+        "googleMapsApiKey": "AIzaSyAJwBJZ7YHp0T_oEAyHjsseeCmQI5uQOj0"
       }
     },
     "android": {
@@ -25,12 +25,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.deamn.proxalert",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyBZtpfw6f_NR2jF5Kolpc-L66t1z6zL6EY"
+          "apiKey": "AIzaSyAJwBJZ7YHp0T_oEAyHjsseeCmQI5uQOj0"
         }
-      }
+      },
+      "package": "com.deamn.proxalert"
     },
     "web": {
       "favicon": "./assets/favicon.png"

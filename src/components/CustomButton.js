@@ -6,13 +6,14 @@ import {
   StyleSheet
 } from "react-native";
 
-const CustomButton = ({ 
+const CustomButton = ({
   title,
   style,
   textStyle,
   textColor,
   onPress,
-  loading
+  loading,
+  statusButton
 }) => {
   const { loader } = styles;
 
@@ -21,20 +22,19 @@ const CustomButton = ({
       style={style}
       activeOpacity={0.6}
       onPress={onPress}
-
+      disabled={statusButton === "submitting"}
     >
       {loading ? (
-        <ActivityIndicator 
+        <ActivityIndicator
           style={loader}
-          size={22} 
-          color="white" 
-        />) 
-      : (
-        <Text style={[textStyle, { color: textColor }]}>
-          {title}
-        </Text>)
+          size={22}
+          color="white"
+        />)
+        : (
+          <Text style={[textStyle, { color: textColor }]}>
+            {title}
+          </Text>)
       }
-
     </TouchableOpacity>
   )
 }

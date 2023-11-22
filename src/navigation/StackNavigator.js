@@ -61,7 +61,6 @@ const StackNavigator = () => {
         </Stack.Screen>
         <Stack.Screen
           name="Map"
-          component={MapScreen}
           options={{
             headerShown: true,
             headerTitle: "NEED EMERGENCY ASSISTANCE?",
@@ -74,7 +73,9 @@ const StackNavigator = () => {
             },
             headerTintColor: 'white'
           }}
-        />
+        >
+          {() => <MapScreen user={user} setUser={setUser} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   )
