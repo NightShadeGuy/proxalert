@@ -2,7 +2,9 @@ import {
   StyleSheet,
   View,
   Text,
-  ScrollView
+  ScrollView,
+  Modal,
+  ActivityIndicator
 } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import * as Location from 'expo-location';
@@ -16,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from "../config/firebase";
 import { toast } from '../../utils';
+import { Ionicons } from '@expo/vector-icons';
 
 const MapScreen = ({ user, setUser }) => {
   console.log("Current user", user);
@@ -28,6 +31,8 @@ const MapScreen = ({ user, setUser }) => {
     longitudeDelta: 0.0421,
   })
   const [statusButton, setStatusButton] = useState("idle");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const fetchUserLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -63,6 +68,7 @@ const MapScreen = ({ user, setUser }) => {
   const saveUserLocation = async () => {
     const userLocationRef = collection(db, "user-location")
     setStatusButton("submitting");
+    setModalVisible(true);
     try {
       await addDoc(userLocationRef, {
         user: user.displayName,
@@ -72,11 +78,15 @@ const MapScreen = ({ user, setUser }) => {
         longitude: location.longitude,
         address: { ...details }
       });
-      toast("Your request has been saved.");
+      setIsSaved(true);
     } catch (err) {
       toast(err.message);
     } finally {
       setStatusButton("idle");
+      setTimeout(() => {
+        setModalVisible(false);
+        setIsSaved(false);
+      }, 2000)
     }
   }
 
@@ -119,7 +129,7 @@ const MapScreen = ({ user, setUser }) => {
       />
 
       <CustomButton
-        title={statusButton === "submitting" ? "PROCESSING..." : "SEND LOCATION"}
+        title={statusButton === "submitting" ? "Processing..." : "Send Location"}
         style={[styles.overlayButton, {
           bottom: 25,
           right: 105,
@@ -147,6 +157,26 @@ const MapScreen = ({ user, setUser }) => {
           </ScrollView>
         </View>
       )}
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(!modalVisible)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            {isSaved ? (
+              <Ionicons name="md-checkmark-circle" size={30} color="#4caf50" />)
+              : (<ActivityIndicator size={40} color="#0288D1" />)
+            }
+            <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>
+              {isSaved ? "Your request has been saved." : "Processing..."}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   )
 }
@@ -190,5 +220,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 5,
     elevation: 5,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)"
+  },
+  modalView: {
+    backgroundColor: "white",
+    width: "85%",
+    paddingVertical: 20,
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingLeft: 20,
+    columnGap: 20,
+    borderRadius: 4,
+    shadowColor: '#000',
+    elevation: 5
+  }
 
 })

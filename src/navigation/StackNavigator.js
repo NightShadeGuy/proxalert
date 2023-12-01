@@ -9,6 +9,7 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import MapScreen from "../screens/MapScreen";
+import InboxViewDetails from "../screens/inbox/InboxViewDetails";
 
 const Stack = createNativeStackNavigator();
 
@@ -59,6 +60,22 @@ const StackNavigator = () => {
         <Stack.Screen name="Settings">
           {() => <SettingsScreen user={user} setUser={setUser} />}
         </Stack.Screen>
+        <Stack.Screen
+           name="Inbox-details"
+           component={InboxViewDetails}
+           options={{
+              headerShown: true,
+              headerTitle: "Inbox",
+              headerTitleStyle: {
+                color: "white"
+              },
+              headerStyle: {
+                backgroundColor: "#D64045",
+              },
+              headerTitleAlign: "center",
+              headerTintColor: "white"
+           }}
+        />
         <Stack.Screen
           name="Map"
           options={{
