@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { updateProfile, updatePassword } from "firebase/auth";
-import { useFonts } from "expo-font";
 import { AntDesign } from '@expo/vector-icons';
 import { StatusBar } from 'react-native';
 import { toast } from "../../utils";
@@ -37,15 +36,6 @@ const SettingsScreen = ({ user, setUser }) => {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   console.log(newPassword, confirmNewPassword);
-
-  const [fontsLoaded] = useFonts({
-    "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
-    "NotoSans-SemiBold": require("../../assets/fonts/NotoSans-SemiBold.ttf"),
-  })
-
-  if (!fontsLoaded) {
-    return undefined
-  }
 
   const updateUserInfo = async () => {
     try {
@@ -82,10 +72,7 @@ const SettingsScreen = ({ user, setUser }) => {
         </View>
         <View style={section}>
           <Text
-            style={{
-              fontSize: 18,
-              color: "white"
-            }}
+            style={[font, { fontSize: 18, color: "white" }]}
           >
             ACCOUNT
           </Text>
@@ -99,7 +86,7 @@ const SettingsScreen = ({ user, setUser }) => {
               }
             }}
           >
-            <Text style={defaultText}>PERSONAL INFORMATION</Text>
+            <Text style={[defaultText, font]}>PERSONAL INFORMATION</Text>
             <AntDesign
               name="right"
               size={12}
@@ -114,46 +101,47 @@ const SettingsScreen = ({ user, setUser }) => {
           {showInfo && (
             <View>
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   Email
                 </Text>
                 <TextInput
-                  style={input}
+                   style={[input, font]}
                   placeholder="Email..."
                   value={user.email}
                 />
               </View>
 
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   Name
                 </Text>
                 <TextInput
-                  style={input}
+                  style={[input, font]}
                   onChangeText={value => setUsername(value)}
                   value={username}
                 />
               </View>
 
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   Phone Number
                 </Text>
                 <TextInput
-                  style={input}
-                  placeholder='Ex: 123456'
+                  style={[input, font]}
                   keyboardType="numeric"
+                  placeholder='Ex: 09123456789'
                   onChangeText={value => setPhoneNumber(value)}
                   value={phoneNumber}
                 />
               </View>
 
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   Photo URL
                 </Text>
                 <TextInput
-                  style={input}
+                  style={[input, font]}
+                  keyboardType="url"
                   placeholder="Enter an image url..."
                   onChangeText={value => setPhotoUrl(value)}
                   value={photoUrl}
@@ -181,7 +169,7 @@ const SettingsScreen = ({ user, setUser }) => {
               }
             }}
           >
-            <Text style={defaultText}>CHANGE PASSWORD</Text>
+            <Text style={[defaultText, font]}>CHANGE PASSWORD</Text>
             <AntDesign
               name="right"
               size={12}
@@ -196,22 +184,22 @@ const SettingsScreen = ({ user, setUser }) => {
           {showChangePass && (
             <View>
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   New Password
                 </Text>
                 <TextInput
-                  style={input}
+                  style={[input, font]}
                   secureTextEntry
                   onChangeText={value => setNewPassword(value)}
                 />
               </View>
 
               <View>
-                <Text style={[defaultText, { marginVertical: 10 }]}>
+                <Text style={[defaultText, font, { marginVertical: 10 }]}>
                   Confirm New Password
                 </Text>
                 <TextInput
-                  style={input}
+                  style={[input, font]}
                   secureTextEntry
                   onChangeText={value => setConfirmNewPassword(value)}
                 />
@@ -226,6 +214,7 @@ const SettingsScreen = ({ user, setUser }) => {
               </TouchableOpacity>
             </View>
           )}
+          
         </View>
       </ScrollView>
     </View>

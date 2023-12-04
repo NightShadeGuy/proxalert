@@ -10,7 +10,6 @@ import React, { useState, useEffect } from 'react'
 import * as Location from 'expo-location';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import CustomButton from "../components/CustomButton";
-import { useFonts } from "expo-font";
 import {
   collection,
   addDoc,
@@ -19,6 +18,7 @@ import {
 import { db } from "../config/firebase";
 import { toast } from '../../utils';
 import { Ionicons } from '@expo/vector-icons';
+import StatusModal from '../components/StatusModal';
 
 const MapScreen = ({ user, setUser }) => {
   console.log("Current user", user);
@@ -33,13 +33,16 @@ const MapScreen = ({ user, setUser }) => {
   const [statusButton, setStatusButton] = useState("idle");
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchUserLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
+
     if (status !== "granted") {
       return;
     }
 
+    setIsFetching(true);
     try {
       let location = await Location.getCurrentPositionAsync({ enableHighAccuracy: true });
       let address = await Location.reverseGeocodeAsync(location.coords);
@@ -57,6 +60,8 @@ const MapScreen = ({ user, setUser }) => {
       console.log("Region state:", region);
     } catch (err) {
       toast(err.message);
+    } finally {
+      setIsFetching(false);
     }
   }
 
@@ -70,7 +75,7 @@ const MapScreen = ({ user, setUser }) => {
     setStatusButton("submitting");
     setModalVisible(true);
     try {
-      await addDoc(userLocationRef, {
+      const docRef = await addDoc(userLocationRef, {
         user: user.displayName,
         uid: user.uid,
         createdAt: serverTimestamp(),
@@ -78,26 +83,18 @@ const MapScreen = ({ user, setUser }) => {
         longitude: location.longitude,
         address: { ...details }
       });
+
+      console.log("Document written:", docRef.id);
       setIsSaved(true);
     } catch (err) {
       toast(err.message);
     } finally {
       setStatusButton("idle");
       setTimeout(() => {
-        setModalVisible(false);
         setIsSaved(false);
-      }, 2000)
+        setModalVisible(false);
+      }, 1000)
     }
-  }
-
-
-  const [fontsLoaded] = useFonts({
-    "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
-    "NotoSans-SemiBold": require("../../assets/fonts/NotoSans-SemiBold.ttf"),
-  })
-
-  if (!fontsLoaded) {
-    return undefined
   }
 
   return (
@@ -177,11 +174,17 @@ const MapScreen = ({ user, setUser }) => {
         </View>
       </Modal>
 
+      {isFetching && (
+        <StatusModal
+          status={isFetching}
+          setStatus={setIsFetching}
+          message="We are finding your location..."
+        />
+      )}
+
     </View>
   )
 }
-
-export default MapScreen
 
 const styles = StyleSheet.create({
   container: {
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)"
+    backgroundColor: "rgba(0, 0, 0, 0.6)"
   },
   modalView: {
     backgroundColor: "white",
@@ -239,5 +242,6 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     elevation: 5
   }
-
 })
+
+export default MapScreen;

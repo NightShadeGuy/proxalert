@@ -63,8 +63,6 @@ const HotlineScreen = () => {
   )
 }
 
-export default HotlineScreen
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -96,3 +94,5 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
       }
 })
+
+export default HotlineScreen;

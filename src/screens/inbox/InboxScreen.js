@@ -4,35 +4,43 @@ import {
     StyleSheet,
     Text,
     TouchableHighlight,
-    View
+    View,
+    Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useFonts } from "expo-font";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config/firebase";
+import {
+    onSnapshot,
+    query,
+    where,
+    orderBy
+} from "firebase/firestore";
+import { auth } from "../../config/firebase";
 import { FontAwesome } from '@expo/vector-icons';
 import moment from "moment";
-import LoadingModal from "../../components/LoadingModal";
 import { useNavigation } from "@react-navigation/native";
+import { locationRef } from "../../../utils";
 
 const InboxScreen = () => {
     const navigation = useNavigation();
     const [listData, setListData] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    console.log(listData);
 
     //This will fetch list of saved user location
     const loadAllRequestSaved = async () => {
-        const locationRef = collection(db, "user-location");
-        setIsLoading(true);
         try {
-            const data = await getDocs(locationRef);
-            const savedData = data.docs.map(doc => doc.data())
-            setListData(savedData);
-            console.log(listData);
+            const userId = auth.currentUser.uid;
+
+            // Get the generated location only for the person that is currently logged in.
+            const q = query(locationRef, where("uid", "==", userId), orderBy("createdAt", "desc"));
+
+            onSnapshot(q, (querySnapshot) => {
+                setListData(querySnapshot.docs.map(doc => (
+                    {...doc.data(), id: doc.id}    //created a new object to include the document id
+                )));
+                console.log("query-snapshot", listData);
+            })
         } catch (err) {
             console.error(err.message)
-        } finally {
-            setIsLoading(false);
         }
     }
 
@@ -40,31 +48,21 @@ const InboxScreen = () => {
         loadAllRequestSaved();
     }, [])
 
-    const requestedOn = (nanoseconds, seconds) => {
-        const milliseconds = seconds * 1000 + nanoseconds / 1e6 // Convert nanoseconds to milliseconds
+    const calendarFormat = (nanoseconds, seconds) => {
+        if (!nanoseconds || !seconds) {
+            return "Date processing"
+        }
 
-        if (milliseconds >= 86400000) { //reach 1 day or more
+        const milliseconds = seconds * 1000 + nanoseconds / 1e6; // Convert nanoseconds to milliseconds
+
+        if (milliseconds >= 86400000) {   // attain a duration of one day or more
             return moment(milliseconds).format("MMM Do YYYY");
         }
         return moment(milliseconds).startOf("hour").fromNow();
     }
 
-    const [fontsLoaded] = useFonts({
-        "NotoSans-Medium": require("../../../assets/fonts/NotoSans-Medium.ttf"),
-        "NotoSans-SemiBold": require("../../../assets/fonts/NotoSans-SemiBold.ttf"),
-    })
-
-    if (!fontsLoaded) {
-        return undefined
-    }
-
-
-    if (isLoading) {
-        return <LoadingModal isLoading={isLoading} />
-    }
-
     return (
-        <View style={{ height: "100%" }}>
+        <View style={{backgroundColor: "white", flex: 1 }}>
             <Text style={styles.headerTitle}>Other Messages</Text>
             <FlatList
                 data={listData}
@@ -76,6 +74,7 @@ const InboxScreen = () => {
                             style={styles.container}
                             onPress={() => navigation.navigate("Inbox-details", {
                                 user: item.user,
+                                id: item.id,
                                 address: item.address,
                                 createdAt: item.createdAt,
                             })}
@@ -89,7 +88,7 @@ const InboxScreen = () => {
                                     />
                                     <Text style={styles.text}>You request to send your location</Text>
                                     <Text style={[styles.text, { color: "gray" }]}>
-                                        {requestedOn(item.createdAt.nanoseconds, item.createdAt.seconds)}
+                                        {calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}
                                     </Text>
                                 </View>
                                 <Text style={[styles.text, { color: "gray", marginLeft: 35 }]}>
@@ -99,12 +98,19 @@ const InboxScreen = () => {
                         </TouchableHighlight>
                     </ScrollView>
                 )}
+                ListEmptyComponent={() => (
+                    <View style={styles.emptyContainer}>
+                        <Image
+                           source={require("../../../assets/images/icon.jpg")}
+                           style={{width: 140, height: 140}}
+                        />
+                        <Text style={styles.text}>You don't have any inbox messages</Text>
+                    </View>
+                )}
             />
         </View>
     )
 }
-
-export default InboxScreen;
 
 const styles = StyleSheet.create({
     headerTitle: {
@@ -130,4 +136,11 @@ const styles = StyleSheet.create({
         columnGap: 10,
         marginLeft: 5,
     },
+    emptyContainer: {
+        marginVertical: "50%",
+        justifyContent: "center",
+        alignItems: "center",
+    }
 })
+
+export default InboxScreen;

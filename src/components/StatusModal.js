@@ -7,28 +7,26 @@ import {
 } from 'react-native';
 import React from 'react';
 
-const LoadingModal = ({ isLoading }) => {
+const StatusModal = ({ status, setStatus, message }) => {
     return (
         <View>
             <Modal
-                transparent={true}
-                visible={isLoading}
-                onRequestClose={() => setModalVisible(!modalVisible)}
+                transparent
+                visible={status}
+                onRequestClose={() => setStatus(!status)}
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalView}>
                         <ActivityIndicator size={40} color="#0288D1" />
                         <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>
-                            Loading...
+                            {message}
                         </Text>
                     </View>
                 </View>
-            </Modal >
-        </View >
+            </Modal>
+        </View>
     )
 }
-
-export default LoadingModal;
 
 const styles = StyleSheet.create({
     modalContainer: {
@@ -51,3 +49,5 @@ const styles = StyleSheet.create({
         elevation: 5
     }
 })
+
+export default StatusModal;

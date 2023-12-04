@@ -1,3 +1,4 @@
+import { StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -61,20 +62,18 @@ const StackNavigator = () => {
           {() => <SettingsScreen user={user} setUser={setUser} />}
         </Stack.Screen>
         <Stack.Screen
-           name="Inbox-details"
-           component={InboxViewDetails}
-           options={{
-              headerShown: true,
-              headerTitle: "Inbox",
-              headerTitleStyle: {
-                color: "white"
-              },
-              headerStyle: {
-                backgroundColor: "#D64045",
-              },
-              headerTitleAlign: "center",
-              headerTintColor: "white"
-           }}
+          name="Inbox-details"
+          component={InboxViewDetails}
+          options={{
+            headerShown: true,
+            headerTitle: "Inbox",
+            headerTitleStyle: styles.standard,
+            headerStyle: {
+              backgroundColor: "#D64045",
+            },
+            headerTitleAlign: "center",
+            headerTintColor: "white",
+          }}
         />
         <Stack.Screen
           name="Map"
@@ -82,8 +81,8 @@ const StackNavigator = () => {
             headerShown: true,
             headerTitle: "NEED EMERGENCY ASSISTANCE?",
             headerTitleStyle: {
-              color: "white",
-              fontSize: 16
+              fontSize: 14,
+              fontFamily: "NotoSans-Bold",
             },
             headerStyle: {
               backgroundColor: "#D64045",
@@ -97,5 +96,13 @@ const StackNavigator = () => {
     </NavigationContainer>
   )
 }
+
+const styles = StyleSheet.create({
+   standard: {
+    color: "white",
+    fontFamily: "NotoSans-Bold",
+    fontSize: 21
+   }
+})
 
 export default StackNavigator;

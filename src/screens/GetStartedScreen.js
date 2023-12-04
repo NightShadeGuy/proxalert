@@ -1,21 +1,18 @@
 import React from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native"; 
-import { useFonts } from "expo-font";
 import CustomButton from "../components/CustomButton";
+import { loadFonts } from "../../utils";
 
 const GetStartedScreen = () => {
   const navigation = useNavigation();
   const { container, buttonContainer, button, text } = styles;
-
-  const [ fontsLoaded ] = useFonts({
-    "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
-  })
+  const [fontsLoaded] = loadFonts();
 
   if(!fontsLoaded) {
-    return undefined
+    return null
   }
-
+  
   return (
     <View style={container}>
       <View style={buttonContainer}>
@@ -38,8 +35,6 @@ const GetStartedScreen = () => {
     </View>
   )
 }
-
-export default GetStartedScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -66,7 +61,9 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSans-Medium",
     fontSize: 17,
     textTransform: "uppercase",
-    paddingTop: 3
+    paddingTop: 2
   },
-
 })
+
+
+export default GetStartedScreen;

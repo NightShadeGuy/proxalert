@@ -1,4 +1,5 @@
 import React from "react";
+import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import InboxScreen from "../screens/inbox/InboxScreen";
@@ -45,10 +46,7 @@ const BottomTabs = ({ user, setUser }) => {
                             color={focused ? "#EB5757" : "#828282"}
                         />,
                     headerShown: true,
-                    headerTitleStyle: {
-                        color: "white",
-                        fontSize: 21
-                    },
+                    headerTitleStyle: styles.standard,
                     headerStyle: {
                         backgroundColor: "#D64045"
                     },
@@ -82,5 +80,13 @@ const BottomTabs = ({ user, setUser }) => {
         </Tab.Navigator>
     )
 }
+
+const styles = StyleSheet.create({
+    standard: {
+     color: "white",
+     fontSize: 21,
+     fontFamily: "NotoSans-Bold"
+    }
+ })
 
 export default BottomTabs;

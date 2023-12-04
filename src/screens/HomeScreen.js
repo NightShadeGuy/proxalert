@@ -11,12 +11,13 @@ import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import CustomButton from '../components/CustomButton';
 import { useNavigation } from '@react-navigation/native';
-import { useFonts } from "expo-font";
 import { FontAwesome } from '@expo/vector-icons';
+import { loadFonts } from "../../utils";
 
 const HomeScreen = ({ user, setUser }) => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [fontsLoaded] = loadFonts();
 
   const {
     container,
@@ -30,15 +31,6 @@ const HomeScreen = ({ user, setUser }) => {
     textSection,
   } = styles;
 
-  const [fontsLoaded] = useFonts({
-    "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
-    "NotoSans-SemiBold": require("../../assets/fonts/NotoSans-SemiBold.ttf"),
-  })
-
-  if (!fontsLoaded) {
-    return undefined
-  }
-
   const logout = async () => {
     setLoading(true);
     try {
@@ -50,6 +42,10 @@ const HomeScreen = ({ user, setUser }) => {
     }
   }
 
+  if (!fontsLoaded) {
+    return null
+  }
+
   return (
     <View style={container}>
       <View style={section}>
@@ -59,7 +55,7 @@ const HomeScreen = ({ user, setUser }) => {
               headerColor,
               {
                 fontSize: 24,
-                fontFamily: "NotoSans-SemiBold"
+                fontFamily: "NotoSans-Bold"
               }
             ]}
           >

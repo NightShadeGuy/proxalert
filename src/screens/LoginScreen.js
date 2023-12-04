@@ -7,7 +7,6 @@ import {
   Modal,
 } from "react-native";
 import React, { useState } from "react";
-import { useFonts } from "expo-font";
 import { auth } from "../config/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
@@ -32,22 +31,13 @@ const LoginScreen = ({ user, setUser }) => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [fontsLoaded] = useFonts({
-    "NotoSans-Medium": require("../../assets/fonts/NotoSans-Medium.ttf"),
-    "NotoSans-SemiBold": require("../../assets/fonts/NotoSans-SemiBold.ttf"),
-  })
-
-  if (!fontsLoaded) {
-    return undefined
-  }
-
   const logIn = async () => {
     setLoading(true);
     try {
       // check if both input have characters
       if (email && password) {
         const currUser = await signInWithEmailAndPassword(auth, email, password);
-        console.log("Login screen after signIn", currUser);
+        console.log("Successfully logged in", currUser);
         setUser(currUser);
         navigation.navigate("Main");
       } else {
@@ -151,7 +141,10 @@ const LoginScreen = ({ user, setUser }) => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(!modalVisible)}
       >
-        <View style={bottomView}>
+        <Pressable
+          style={bottomView}
+          onPress={() => setModalVisible(!modalVisible)}
+        >
           <View style={modalView}>
             <Text style={[text, font]}>
               Would you really like to reset your password via email?
@@ -165,13 +158,11 @@ const LoginScreen = ({ user, setUser }) => {
               onPress={resetPassword}
             />
           </View>
-        </View>
+        </Pressable>
       </Modal>
     </View>
   )
 }
-
-export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -231,3 +222,4 @@ const styles = StyleSheet.create({
   },
 })
 
+export default LoginScreen;
