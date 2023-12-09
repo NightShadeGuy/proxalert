@@ -1,11 +1,22 @@
-import { StyleSheet, Text, View, TextInput, Pressable } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Pressable
+} from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  signOut
+} from "firebase/auth";
 import CustomButton from "../components/CustomButton";
 import { useNavigation } from "@react-navigation/native";
 
-const RegisterScreen = () => {
+const RegisterScreen = ({ user, setUser }) => {
   const {
     container,
     headerText,
@@ -15,6 +26,7 @@ const RegisterScreen = () => {
     button,
     section
   } = styles;
+  console.log("Register Screen", user);
 
   const navigation = useNavigation();
 
@@ -25,12 +37,38 @@ const RegisterScreen = () => {
   const [confirmPass, setConfirmPass] = useState('');
   const [loading, setLoading] = useState(false)
 
+  const updateUserInfo = async () => {
+    try {
+      await updateProfile(auth.currentUser, { displayName: name });
+      console.log("Updated sucessfully");
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+  //Need the user to be signed in in order to change the name
+  const logInForASeconds = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      console.log("Currently logged in");
+      updateUserInfo();
+    } catch (err) {
+      console.error(err.message);
+    } finally {
+      signOut(auth);
+    }
+  }
+
+
   const handleRegister = async () => {
     setLoading(true);
     try {
       if (password === confirmPass) {
         await createUserWithEmailAndPassword(auth, email, password);
-        navigation.navigate("Login")
+        console.log("Successfully registered");
+        logInForASeconds();
+        navigation.navigate("Login");
+
       } else { alert("Pass not match") }
     } catch (error) {
       console.log(error);

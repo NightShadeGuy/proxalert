@@ -107,11 +107,13 @@ const MapScreen = ({ user, setUser }) => {
         showsUserLocation
         showsTraffic
       >
-        <Marker
-          coordinate={region}
-          title={user?.displayName ? `User: ${user?.displayName}` : "Please Edit your name in the settings"}
-          description={`${details?.streetNumber} ${details?.street} ${details?.district}`}
-        />
+        {details && (
+          <Marker
+            coordinate={region}
+            title={user?.displayName ? `User: ${user?.displayName}` : "Please Edit your name in the settings"}
+            description={`${details?.streetNumber} ${details?.street} ${details?.district}`}
+          />
+        )}
       </MapView>
 
       <CustomButton

@@ -53,8 +53,9 @@ const StackNavigator = () => {
         )}
         <Stack.Screen
           name="Register"
-          component={RegisterScreen}
-        />
+        >
+          {() => <RegisterScreen user={user} setUser={setUser} />}
+        </Stack.Screen>
         <Stack.Screen name="Login">
           {() => <LoginScreen user={user} setUser={setUser} />}
         </Stack.Screen>
@@ -79,7 +80,7 @@ const StackNavigator = () => {
           name="Map"
           options={{
             headerShown: true,
-            headerTitle: "NEED EMERGENCY ASSISTANCE?",
+            headerTitle: "Need Emergency Assistance?",
             headerTitleStyle: {
               fontSize: 14,
               fontFamily: "NotoSans-Bold",

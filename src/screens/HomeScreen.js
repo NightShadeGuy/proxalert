@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,6 +6,7 @@ import {
   ToastAndroid,
   Image,
   Pressable,
+  Animated,
 } from 'react-native';
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
@@ -41,6 +42,25 @@ const HomeScreen = ({ user, setUser }) => {
       ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
     }
   }
+
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.timing(scaleValue, {
+      toValue: 1.2,
+      duration: 500, 
+      useNativeDriver: true, // Set to true if possible for better performance
+    }).start();
+  };
+
+  const resetScale = () => {
+    Animated.timing(scaleValue, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
 
   if (!fontsLoaded) {
     return null
@@ -81,15 +101,23 @@ const HomeScreen = ({ user, setUser }) => {
         </Text>
       </View>
 
-      <View style={{ alignItems: "center" }}>
-        <Pressable
-          onLongPress={() => navigation.navigate("Map")}
+      <View
+        style={{ alignItems: "center" }}
+      >
+        <Animated.View
+          style={{ transform: [{ scale: scaleValue }] }}
         >
-          <Image
-            source={require("../../assets/images/request-btn.png")}
-            style={image}
-          />
-        </Pressable>
+          <Pressable
+            onPressIn={handlePress}
+            onPressOut={resetScale}
+            onLongPress={() => navigation.navigate("Map")}
+          >
+            <Image
+              source={require("../../assets/images/request-btn.png")}
+              style={image}
+            />
+          </Pressable>
+        </Animated.View>
         <View style={textSection}>
           <Text style={[font, { fontSize: 12 }]}>TAP TO REQUEST EMERGENCY ASSISTANT</Text>
           <Text style={[font, { fontSize: 12 }]}>HOLD FOR QUICK ASSISTANCE!</Text>
