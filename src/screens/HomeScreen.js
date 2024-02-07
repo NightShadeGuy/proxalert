@@ -13,7 +13,7 @@ import { signOut } from "firebase/auth";
 import CustomButton from '../components/CustomButton';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome } from '@expo/vector-icons';
-import { loadFonts } from "../../utils";
+import { loadFonts } from "../shared/utils";
 
 const HomeScreen = ({ user, setUser }) => {
   const navigation = useNavigation();

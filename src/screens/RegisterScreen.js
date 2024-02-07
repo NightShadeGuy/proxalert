@@ -46,7 +46,7 @@ const RegisterScreen = ({ user, setUser }) => {
     }
   }
 
-  //Need the user to be signed in in order to change the name
+  //User need to be signed in in order to change the name
   const logInForASeconds = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);

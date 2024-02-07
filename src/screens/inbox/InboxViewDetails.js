@@ -15,7 +15,7 @@ import {
 import moment from "moment";
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
-import { locationRef, toast } from '../../../utils';
+import { locationRef, toast } from '../../shared/utils';
 import { doc, deleteDoc } from "firebase/firestore";
 import StatusModal from "../../components/StatusModal";
 

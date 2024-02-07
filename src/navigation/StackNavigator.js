@@ -99,11 +99,11 @@ const StackNavigator = () => {
 }
 
 const styles = StyleSheet.create({
-   standard: {
+  standard: {
     color: "white",
     fontFamily: "NotoSans-Bold",
     fontSize: 21
-   }
+  }
 })
 
 export default StackNavigator;

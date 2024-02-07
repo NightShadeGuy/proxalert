@@ -18,7 +18,7 @@ import { auth } from "../../config/firebase";
 import { FontAwesome } from '@expo/vector-icons';
 import moment from "moment";
 import { useNavigation } from "@react-navigation/native";
-import { locationRef } from "../../../utils";
+import { locationRef } from "../../shared/utils";
 
 const InboxScreen = () => {
     const navigation = useNavigation();

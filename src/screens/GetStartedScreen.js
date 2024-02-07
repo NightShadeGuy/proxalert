@@ -2,7 +2,7 @@ import React from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native"; 
 import CustomButton from "../components/CustomButton";
-import { loadFonts } from "../../utils";
+import { loadFonts } from "../shared/utils";
 
 const GetStartedScreen = () => {
   const navigation = useNavigation();

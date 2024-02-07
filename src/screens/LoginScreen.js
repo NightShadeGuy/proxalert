@@ -11,7 +11,7 @@ import { auth } from "../config/firebase";
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
-import { toast } from "../../utils"
+import { toast } from "../shared/utils";
 
 const LoginScreen = ({ user, setUser }) => {
   const {

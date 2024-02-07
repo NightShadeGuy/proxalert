@@ -12,7 +12,7 @@ import {
 import { updateProfile, updatePassword } from "firebase/auth";
 import { AntDesign } from '@expo/vector-icons';
 import { StatusBar } from 'react-native';
-import { toast } from "../../utils";
+import { toast } from "../shared/utils";
 
 const SettingsScreen = ({ user, setUser }) => {
   const {
