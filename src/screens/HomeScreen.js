@@ -12,7 +12,7 @@ import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
 import CustomButton from '../components/CustomButton';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { loadFonts } from "../shared/utils";
 
 const HomeScreen = ({ user, setUser }) => {
@@ -48,7 +48,7 @@ const HomeScreen = ({ user, setUser }) => {
   const handlePress = () => {
     Animated.timing(scaleValue, {
       toValue: 1.2,
-      duration: 500, 
+      duration: 500,
       useNativeDriver: true, // Set to true if possible for better performance
     }).start();
   };
@@ -88,6 +88,18 @@ const HomeScreen = ({ user, setUser }) => {
             onPress={() => navigation.navigate("Settings")}
           />
         </View>
+
+        {user.emailVerified && (
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            columnGap: 5,
+          }}>
+            <MaterialIcons name="verified" size={24} color="green" />
+            <Text style={[font, { color: "green" }]}>Verified</Text>
+          </View>
+        )}
+
         <Text
           style={[
             headerColor,
@@ -99,6 +111,7 @@ const HomeScreen = ({ user, setUser }) => {
         >
           We are here for you.
         </Text>
+
       </View>
 
       <View
@@ -119,8 +132,7 @@ const HomeScreen = ({ user, setUser }) => {
           </Pressable>
         </Animated.View>
         <View style={textSection}>
-          <Text style={[font, { fontSize: 12 }]}>TAP TO REQUEST EMERGENCY ASSISTANT</Text>
-          <Text style={[font, { fontSize: 12 }]}>HOLD FOR QUICK ASSISTANCE!</Text>
+          <Text style={[font, { fontSize: 14 }]}>HOLD TO REQUEST EMERGENCY ASSISTANT</Text>
         </View>
       </View>
 

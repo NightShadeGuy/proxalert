@@ -16,7 +16,11 @@ import React, {
   useRef
 } from 'react'
 import * as Location from 'expo-location';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, {
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE
+} from 'react-native-maps';
 import CustomButton from "../components/CustomButton";
 import {
   collection,
@@ -24,13 +28,15 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from "../config/firebase";
-import { toast } from '../shared/utils';
-import { AntDesign } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import { FontAwesome } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { toast, defaultTheme } from '../shared/utils';
+import {
+  AntDesign,
+  Ionicons,
+  FontAwesome,
+  FontAwesome5,
+  MaterialIcons,
+  MaterialCommunityIcons
+} from '@expo/vector-icons';
 import StatusModal from '../components/StatusModal';
 import {
   fetchAutoComplete,
@@ -65,18 +71,11 @@ const MapScreen = ({ user, setUser }) => {
 
   const [routes, setRoutes] = useState([]);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
-  const [newCoordinates, setNewCoordinates] = useState({})
+  const [newCoordinates, setNewCoordinates] = useState(null)
+  console.log("New coordinates", newCoordinates);
   const [decodedCoordinates, setDecodedCoordinates] = useState([]);
   console.log("routes", routes);
-  console.log(decodedCoordinates);
-
-  /*   const sampleCoordinates = [  //This is the sample data structure of decodedCoordinates
-    { latitude: 14.76911, longitude: 121.03853 },
-    { latitude: 14.76912, longitude: 121.03841 },
-    { latitude: 14.76912, longitude: 121.03791 },
-    { latitude: 14.76911, longitude: 121.03718 },
-  ];
- */
+  console.log("decoded", decodedCoordinates);
 
   const [listOfHospitals, setListOfHospitals] = useState([]);
   const [showHospitals, setShowHospitals] = useState(false);
@@ -108,7 +107,6 @@ const MapScreen = ({ user, setUser }) => {
       const subscription = await Location.watchPositionAsync(
         { enableHighAccuracy: true, distanceInterval: 5 },
         (newLocation) => {
-          console.log("Watch new position", newLocation);
           updateLocation(newLocation);
         }
       );
@@ -133,7 +131,8 @@ const MapScreen = ({ user, setUser }) => {
       }
     ));
     moveCamera(location?.coords.latitude, location?.coords.longitude);
-
+    console.log("Watch new position", location);
+    updateRoute(location?.coords.latitude, location?.coords.longitude);
   };
 
   const saveUserLocation = async () => {
@@ -145,8 +144,8 @@ const MapScreen = ({ user, setUser }) => {
         user: user.displayName,
         uid: user.uid,
         createdAt: serverTimestamp(),
-        latitude: location.latitude,
-        longitude: location.longitude,
+        latitude: region.latitude,
+        longitude: region.longitude,
         address: { ...details }
       });
 
@@ -208,7 +207,7 @@ const MapScreen = ({ user, setUser }) => {
         selectedDestination = items.find(marker => marker.properties.datasource.raw.osm_id === selectDestination);
       }
 
-      
+
       if (selectedDestination) {
         let lat, lon;
 
@@ -241,8 +240,7 @@ const MapScreen = ({ user, setUser }) => {
     }
   };
 
-
-  const updateRoute = async () => {
+  const createRoute = async () => {
     console.log("new coordinates", newCoordinates);
     setIsRoute(true);
     try {
@@ -269,6 +267,15 @@ const MapScreen = ({ user, setUser }) => {
         longitude: coord[1],
       }));
       setDecodedCoordinates(decodedCoords);
+
+      /*   const sampleCoordinates = [  //Here's is a sample data of the end result decodedCoordinates
+        { latitude: 14.76911, longitude: 121.03853 },
+        { latitude: 14.76912, longitude: 121.03841 },
+        { latitude: 14.76912, longitude: 121.03791 },
+        { latitude: 14.76911, longitude: 121.03718 },
+      ];
+     */
+
     } catch (error) {
       console.error(error.message);
     } finally {
@@ -276,12 +283,54 @@ const MapScreen = ({ user, setUser }) => {
     }
   }
 
-  /*     useEffect(() => {
-        updateRoute();
-        console.log("newCoordinates change: useEffect");
-      }, [newCoordinates]);
+  /*   const updateRoute = () => {
+      const direction = [...decodedCoordinates];
+      direction.shift();
+      setDecodedCoordinates(direction);
+      console.log("references", direction);
+    }
    */
 
+
+  // Function to calculate distance between two points
+  function distance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180; // Convert degrees to radians
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+
+
+  const updateRoute = (myLatitude, myLongitude) => {
+    console.log("UpdateRoute current loc latitude:", myLatitude, " longitude:", myLongitude);
+    const distanceThreshold = 0.05; // Adjust as needed
+    const direction = [...decodedCoordinates];
+
+    // Calculate distance between current location and the first coordinate
+    const dist = distance(
+      myLatitude,
+      myLongitude,
+      direction[0]?.latitude,
+      direction[0]?.longitude
+    );
+    console.log("dist", dist);
+
+    // If the distance is less than the threshold, remove the first coordinate
+    if (dist <= distanceThreshold) {
+      direction.shift();
+      setDecodedCoordinates(direction);
+      console.log("Updated route:", direction);
+    } else {
+      console.log("Still on track.");
+    }
+  };
 
   const findHospitals = async () => {
     setFindingHospitals(true);
@@ -326,7 +375,7 @@ const MapScreen = ({ user, setUser }) => {
         pitch: 90,
         heading: 90,   //Need to calculateDirectionAngle, 0 Camera points north. 90: Camera points east. 180: Camera points south. 270: Camera points west.
         altitude: 20,
-        zoom: 30
+        zoom: 20
       },
         1000  //duration
       );
@@ -343,7 +392,7 @@ const MapScreen = ({ user, setUser }) => {
         initialRegion={region}
         provider={PROVIDER_GOOGLE}
         showsUserLocation
-        followsUserLocation
+        //followsUserLocation
       //showsTraffic
       >
         {details && (
@@ -395,7 +444,7 @@ const MapScreen = ({ user, setUser }) => {
                 <MaterialCommunityIcons
                   name="hospital-marker"
                   size={30}
-                  color="#D64045"
+                  color={defaultTheme}
                 />
               </Marker>
             ))
@@ -417,45 +466,59 @@ const MapScreen = ({ user, setUser }) => {
           right: 115,
         }]}
         textStyle={styles.overlayButtonText}
-        textColor="#D64045"
+        textColor={defaultTheme}
         onPress={saveUserLocation}
         statusButton={statusButton}
       />
-      {listOfHospitals.length > 0 && (
+      <TouchableOpacity
+        activeOpacity={0.3}
+        style={[styles.overlayButton, {
+          bottom: 165,
+          right: 10,
+          paddingHorizontal: 10,
+          backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
+        }]}
+        onPress={() => setShowHospitals(true)}
+        disabled={listOfHospitals.length <= 0}
+      >
         <MaterialCommunityIcons
           name="hospital-box-outline"
           size={24}
-          color="#1273de"
-          style={[styles.overlayButton, {
-            bottom: 165,
-            right: 10,
-            paddingHorizontal: 10,
-          }]}
-          onPress={() => setShowHospitals(true)}
+          color={listOfHospitals.length <= 0 ? "rgb(179, 179, 179)" : defaultTheme}
         />
-      )}
-      <FontAwesome5
-        name="route"
-        size={24}
-        color="#1273de"
+      </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.3}
         style={[styles.overlayButton, {
           bottom: 115,
           right: 10,
           paddingHorizontal: 10,
+          backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
         }]}
-        onPress={updateRoute}
-      />
-      <MaterialIcons
-        name="my-location"
-        size={24}
-        color="#1273de"
+        onPress={createRoute}
+        disabled={!newCoordinates}
+      >
+        <FontAwesome5
+          name="route"
+          size={24}
+          color={!newCoordinates ? "rgb(179, 179, 179)" : defaultTheme}
+        />
+      </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.3}
         style={[styles.overlayButton, {
           bottom: 65,
           right: 10,
           paddingHorizontal: 10,
         }]}
         onPress={fetchMyLocation}
-      />
+      >
+        <MaterialIcons
+          name="my-location"
+          size={24}
+          color={defaultTheme}
+        />
+      </TouchableOpacity>
       <View style={{
         position: "absolute",
         left: 10,
@@ -502,7 +565,7 @@ const MapScreen = ({ user, setUser }) => {
               <MaterialCommunityIcons
                 name="hospital-marker"
                 size={24}
-                color="#D64045"
+                color={defaultTheme}
               />
             </TouchableHighlight>
           )}
@@ -528,7 +591,7 @@ const MapScreen = ({ user, setUser }) => {
               <FontAwesome5
                 name={item.type == "hospital" ? "hospital" : "map-marker-alt"}
                 size={24}
-                color="#D64045"
+                color={defaultTheme}
               />
               <View>
                 <Text style={styles.defaultFont}>
@@ -582,7 +645,7 @@ const MapScreen = ({ user, setUser }) => {
             bottom: 0,
             width: "100%",
             borderTopWidth: 5,
-            borderColor: "#D64045",
+            borderColor: { defaultTheme },
           }}>
             <FontAwesome
               name="arrow-down"
@@ -592,7 +655,7 @@ const MapScreen = ({ user, setUser }) => {
                 position: "absolute",
                 top: -40,
                 left: 110,
-                backgroundColor: "#D64045",
+                backgroundColor: { defaultTheme },
                 paddingHorizontal: 50,
                 paddingVertical: 10,
                 height: 40,
@@ -626,7 +689,7 @@ const MapScreen = ({ user, setUser }) => {
                   <FontAwesome5
                     name="hospital"
                     size={24}
-                    color="#D64045"
+                    color={defaultTheme}
                   />
                   <View>
                     <Text style={styles.headerHospital}>{item.properties.address_line1}</Text>
@@ -780,7 +843,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingTop: 3,
     paddingBottom: 6,
-    backgroundColor: "#D64045",
+    backgroundColor: defaultTheme,
     color: "white",
   },
   distance: {

@@ -3,7 +3,15 @@ import { db } from "../config/firebase";
 import { collection } from "firebase/firestore";
 import { useFonts } from "expo-font";
 
-export const locationRef = collection(db, "user-location");
+
+//Colors 
+export const defaultTheme = "#D64045";
+
+//Database Collection
+export const clientAccountRef = collection(db, "client-account");
+export const responderAccountRef = collection(db, "responder-account");
+export const clientLocationRef = collection(db, "client-location");
+export const responderLocationRef = collection(db, "client-location");
 
 export const loadFonts = () => {
     return useFonts({
@@ -14,11 +22,11 @@ export const loadFonts = () => {
 };
 
 export const toast = (message) => {
-    ToastAndroid.showWithGravityAndOffset(
+    ToastAndroid.showWithGravity(
         message,
         ToastAndroid.LONG,
-        ToastAndroid.TOP,
-        0,
-        50,
+        ToastAndroid.TOP
+/*         0,
+        50, */
     );
 }

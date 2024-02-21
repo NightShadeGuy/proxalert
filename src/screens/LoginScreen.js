@@ -5,10 +5,16 @@ import {
   StyleSheet,
   Pressable,
   Modal,
+  Alert
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  signOut
+} from "firebase/auth";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../components/CustomButton";
 import { toast } from "../shared/utils";
@@ -34,12 +40,22 @@ const LoginScreen = ({ user, setUser }) => {
   const logIn = async () => {
     setLoading(true);
     try {
-      // check if both input have characters
       if (email && password) {
-        const currUser = await signInWithEmailAndPassword(auth, email, password);
-        console.log("Successfully logged in", currUser);
-        setUser(currUser);
-        navigation.navigate("Main");
+        const account = await signInWithEmailAndPassword(auth, email, password);
+        console.log("Successfully logged in", account);
+        setUser(account);
+          
+        if(account.user.emailVerified) {
+          navigation.navigate("Main");
+        } else {
+          await verifyEmail(account.user);
+          await signOut(auth);
+          Alert.alert(
+            "Your account is not verified yet!",
+            `We advise you to confirm your email address in order to prevent a false alarm. We have already emailed you, so you can check your inbox to begin the verification process.`
+          )
+        }
+
       } else {
         toast("Email and password must contain any character.");
       }
@@ -49,6 +65,7 @@ const LoginScreen = ({ user, setUser }) => {
       setLoading(false);
     }
   }
+
 
   const resetPassword = async () => {
     setLoading(true);
@@ -64,6 +81,15 @@ const LoginScreen = ({ user, setUser }) => {
       toast(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  const verifyEmail = async (user) => {
+    try {
+      await sendEmailVerification(user);
+      console.log("You may check your email to verified");
+    } catch (error) {
+      console.error(error.message);
     }
   }
 

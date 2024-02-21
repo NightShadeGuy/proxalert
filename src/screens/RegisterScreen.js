@@ -1,9 +1,12 @@
 import {
+  ScrollView,
   StyleSheet,
   Text,
   View,
   TextInput,
-  Pressable
+  Pressable,
+  TouchableOpacity,
+  Alert
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
@@ -11,10 +14,18 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
-  signOut
+  signOut,
 } from "firebase/auth";
 import CustomButton from "../components/CustomButton";
 import { useNavigation } from "@react-navigation/native";
+import { addDoc, serverTimestamp } from "firebase/firestore";
+import { Octicons } from '@expo/vector-icons';
+import {
+  clientAccountRef,
+  responderAccountRef,
+  defaultTheme,
+  toast
+} from "../shared/utils";
 
 const RegisterScreen = ({ user, setUser }) => {
   const {
@@ -29,35 +40,13 @@ const RegisterScreen = ({ user, setUser }) => {
   console.log("Register Screen", user);
 
   const navigation = useNavigation();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
+  const [registerAsResponder, setRegisterAsResponder] = useState(false);
   const [loading, setLoading] = useState(false)
-
-  const updateUserInfo = async () => {
-    try {
-      await updateProfile(auth.currentUser, { displayName: name });
-      console.log("Updated sucessfully");
-    } catch (err) {
-      console.error(err.message);
-    }
-  }
-
-  //User need to be signed in in order to change the name
-  const logInForASeconds = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log("Currently logged in");
-      updateUserInfo();
-    } catch (err) {
-      console.error(err.message);
-    } finally {
-      signOut(auth);
-    }
-  }
 
 
   const handleRegister = async () => {
@@ -65,11 +54,13 @@ const RegisterScreen = ({ user, setUser }) => {
     try {
       if (password === confirmPass) {
         await createUserWithEmailAndPassword(auth, email, password);
-        console.log("Successfully registered");
-        logInForASeconds();
+        await logInForASeconds();
         navigation.navigate("Login");
 
-      } else { alert("Pass not match") }
+        toast("You can now login your account");
+      } else {
+        alert("Password doesn't match")
+      }
     } catch (error) {
       console.log(error);
       alert('Failed: ' + error.message)
@@ -78,15 +69,54 @@ const RegisterScreen = ({ user, setUser }) => {
     }
   }
 
+  //User need to be signed in in order to change the name
+  const logInForASeconds = async () => {
+    try {
+      const docs = await signInWithEmailAndPassword(auth, email, password);
+      await addAccountToDB(docs.user);
+      await updateUserInfo();
+
+      console.log("logInForASeconds", docs.user);
+    } catch (err) {
+      console.error(err.message);
+    } finally {
+      signOut(auth);
+    }
+  }
+
+  const updateUserInfo = async () => {
+    try {
+      await updateProfile(auth.currentUser, { displayName: name });
+      console.log("update profile sucessfully");
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  const addAccountToDB = async (user) => {
+    try {
+      const useCollection = registerAsResponder ? responderAccountRef : clientAccountRef;
+      const docRef = await addDoc(useCollection, {
+        user: name,
+        uid: user.uid,
+        /* email: email, */
+        contactNumber: phone,
+        /* password: password, */
+        createAt: serverTimestamp(),
+        isResponder: registerAsResponder
+      })
+      console.log("New account has been uploaded to db", docRef.id);
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
 
   return (
-    <View style={container}>
-      <View>
-        <Text style={[headerText, { fontFamily: "NotoSans-SemiBold" }]}>REGISTER</Text>
-      </View>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <Text style={[headerText, { fontFamily: "NotoSans-SemiBold" }]}>REGISTER</Text>
 
-
-      <View style={[section, { justifyContent: "center" }]}>
+      <View style={section}>
         <View>
           <Text style={[text, font]}>Name</Text>
           <TextInput
@@ -128,6 +158,37 @@ const RegisterScreen = ({ user, setUser }) => {
           />
         </View>
 
+
+        <View>
+          <Text
+            style={{
+              justifyContent: "flex-start",
+              color: "gray",
+              marginVertical: 10,
+              marginLeft: 10
+            }}
+          >
+            (Optional)
+          </Text>
+
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              columnGap: 5,
+              paddingHorizontal: 20,
+            }}
+            onPress={() => setRegisterAsResponder(!registerAsResponder)}
+          >
+            <Octicons
+              name={registerAsResponder ? "dot-fill" : "dot"}
+              size={40}
+              color={registerAsResponder ? defaultTheme : "gray"}
+            />
+            <Text style={[font]}>Do you want to register as responder?</Text>
+          </TouchableOpacity>
+        </View>
+
         <CustomButton
           title="Register"
           style={button}
@@ -141,7 +202,7 @@ const RegisterScreen = ({ user, setUser }) => {
         >
           <Text
             style={[text, font, {
-              color: "#D64045",
+              color: defaultTheme,
               textDecorationLine: "underline",
               textTransform: "capitalize",
               fontFamily: "NotoSans-SemiBold"
@@ -152,7 +213,7 @@ const RegisterScreen = ({ user, setUser }) => {
         </Pressable>
       </View>
 
-    </View>
+    </ScrollView>
   )
 }
 
@@ -163,11 +224,11 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 24,
-    color: "#D64045",
+    color: defaultTheme,
     textAlign: "left",
-    top: -50,
     margin: 10,
-    marginLeft: 50,
+    marginLeft: 30,
+    paddingTop: 20
   },
   text: {
     color: "#000000",
@@ -191,7 +252,7 @@ const styles = StyleSheet.create({
   button: {
     width: 191,
     height: 37,
-    backgroundColor: "#D64045",
+    backgroundColor: defaultTheme,
     borderRadius: 20,
     flexShrink: 0,
     marginTop: 50,

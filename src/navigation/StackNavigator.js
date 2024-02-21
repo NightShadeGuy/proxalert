@@ -51,9 +51,7 @@ const StackNavigator = () => {
             {() => <BottomTabs user={user} setUser={setUser} />}
           </Stack.Screen>
         )}
-        <Stack.Screen
-          name="Register"
-        >
+        <Stack.Screen name="Register">
           {() => <RegisterScreen user={user} setUser={setUser} />}
         </Stack.Screen>
         <Stack.Screen name="Login">
