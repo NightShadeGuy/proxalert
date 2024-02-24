@@ -9,20 +9,28 @@ import BottomTabs from "./BottomTabs";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import SettingsScreen from "../screens/SettingsScreen";
-import MapScreen from "../screens/MapScreen";
+import MapScreen from "../screens/map/MapScreen";
+import ResponderMapScreen from "../screens/map/ResponderMapScreen";
 import InboxViewDetails from "../screens/inbox/InboxViewDetails";
+import {
+  onSnapshot,
+} from 'firebase/firestore';
+import { accountsRef } from "../shared/utils";
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
   const [user, setUser] = useState(null);
+  const [responders, setResponders] = useState([]);
+  const [accountDetails, setAccountDetails] = useState(null);
+  const [isResponder, setIsResponder] = useState(false);
 
   useEffect(() => {
     console.log("Effect run");
     const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
       if (userObserver) {
         setUser(userObserver);
-        console.log("USER IS STILL LOGGED IN: ", user);
+        console.log("USER IS STILL LOGGED IN: ", userObserver);
       } else {
         console.log("USER IS LOGGED OUT");
       }
@@ -30,6 +38,38 @@ const StackNavigator = () => {
 
     // Cleanup the subscription when the component unmounts
     return () => unsubscribe();
+  }, [user])
+
+
+  const loadResponders = async () => {
+    try {
+      onSnapshot(accountsRef, (querySnapshot) => {
+        const accounts = querySnapshot.docs.map(doc => (
+          { ...doc.data(), id: doc.id }
+        ))
+
+        const myAccount = accounts.find(responder => responder.uid === user?.uid);
+        setAccountDetails(myAccount);
+        console.log("MyAccount", myAccount);
+
+        if (myAccount?.isResponder) {
+          setIsResponder(true);
+        } else {
+          setIsResponder(false);
+        }
+
+        setResponders(accounts);
+      })
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+  console.log("Snapshot loadResponders", responders);
+  console.log("Is this current user a responder", isResponder);
+
+  useEffect(() => {
+    loadResponders();
   }, [user])
 
   return (
@@ -78,7 +118,6 @@ const StackNavigator = () => {
           name="Map"
           options={{
             headerShown: true,
-            headerTitle: "Need Emergency Assistance?",
             headerTitleStyle: {
               fontSize: 14,
               fontFamily: "NotoSans-Bold",
@@ -89,7 +128,23 @@ const StackNavigator = () => {
             headerTintColor: 'white'
           }}
         >
-          {() => <MapScreen user={user} setUser={setUser} />}
+          {
+            () => isResponder
+              ? (
+                <ResponderMapScreen
+                  user={user}
+                  setUser={setUser}
+                  accountDetails={accountDetails}
+                />
+              )
+              : (
+                <MapScreen
+                  user={user}
+                  setUser={setUser}
+                  accountDetails={accountDetails}
+                />
+              )
+          }
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

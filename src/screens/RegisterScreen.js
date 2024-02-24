@@ -21,8 +21,7 @@ import { useNavigation } from "@react-navigation/native";
 import { addDoc, serverTimestamp } from "firebase/firestore";
 import { Octicons } from '@expo/vector-icons';
 import {
-  clientAccountRef,
-  responderAccountRef,
+  accountsRef,
   defaultTheme,
   toast
 } from "../shared/utils";
@@ -95,8 +94,7 @@ const RegisterScreen = ({ user, setUser }) => {
 
   const addAccountToDB = async (user) => {
     try {
-      const useCollection = registerAsResponder ? responderAccountRef : clientAccountRef;
-      const docRef = await addDoc(useCollection, {
+      const docRef = await addDoc(accountsRef, {
         user: name,
         uid: user.uid,
         /* email: email, */

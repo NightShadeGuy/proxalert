@@ -18,7 +18,7 @@ import { auth } from "../../config/firebase";
 import { FontAwesome } from '@expo/vector-icons';
 import moment from "moment";
 import { useNavigation } from "@react-navigation/native";
-import { locationRef } from "../../shared/utils";
+import { emergencyRequestRef } from "../../shared/utils";
 
 const InboxScreen = () => {
     const navigation = useNavigation();
@@ -31,7 +31,7 @@ const InboxScreen = () => {
             const userId = auth.currentUser.uid;
 
             // Get the generated location only for the person that is currently logged in.
-            const q = query(locationRef, where("uid", "==", userId), orderBy("createdAt", "desc"));
+            const q = query(emergencyRequestRef, where("uid", "==", userId), orderBy("createdAt", "desc"));
 
             onSnapshot(q, (querySnapshot) => {
                 setListData(querySnapshot.docs.map(doc => (

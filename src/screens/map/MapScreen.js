@@ -9,11 +9,13 @@ import {
   TouchableOpacity,
   TouchableHighlight,
   ScrollView,
+  Pressable
 } from 'react-native'
 import React, {
   useState,
   useEffect,
-  useRef
+  useRef,
+  useLayoutEffect
 } from 'react'
 import * as Location from 'expo-location';
 import MapView, {
@@ -21,32 +23,63 @@ import MapView, {
   Polyline,
   PROVIDER_GOOGLE
 } from 'react-native-maps';
-import CustomButton from "../components/CustomButton";
+import CustomButton from "../../components/CustomButton";
 import {
-  collection,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  setDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
 } from 'firebase/firestore';
-import { db } from "../config/firebase";
-import { toast, defaultTheme } from '../shared/utils';
+import { db } from "../../config/firebase";
+import { toast, defaultTheme } from '../../shared/utils';
 import {
   AntDesign,
   Ionicons,
   FontAwesome,
   FontAwesome5,
   MaterialIcons,
-  MaterialCommunityIcons
+  MaterialCommunityIcons,
+  Feather
 } from '@expo/vector-icons';
-import StatusModal from '../components/StatusModal';
+import StatusModal from '../../components/StatusModal';
 import {
   fetchAutoComplete,
   fetchDirections,
   searchByRadius
-} from '../shared/api';
+} from '../../shared/api';
 import polyline from '@mapbox/polyline';
+import { useNavigation } from '@react-navigation/native';
+import { emergencyRequestRef, emergencyTypes } from "../../shared/utils";
+import EmergencyRequestCard from '../../components/EmergencyRequestCard';
 
-const MapScreen = ({ user, setUser }) => {
-  //console.log("Current user", user);
+const MapScreen = ({ user, setUser, accountDetails }) => {
+  const navigation = useNavigation();
+  console.log("Current user", user);
+  console.log("accounts detaisl", accountDetails);
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
+
+  useLayoutEffect(() => {  //use for UI loads
+    navigation.setOptions({
+      headerTitle: "Need Emergency Asistance?",
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => setShowProfileDetails(!showProfileDetails)}
+        >
+          <MaterialCommunityIcons
+            name={showProfileDetails ? "account-details" : "account-details-outline"}
+            size={25}
+            color="white"
+          />
+        </TouchableOpacity>
+      )
+    })
+  }, [showProfileDetails])
+
+
   const [details, setDetails] = useState(null);
   const [region, setRegion] = useState({
     latitude: 14.64953000,
@@ -55,11 +88,21 @@ const MapScreen = ({ user, setUser }) => {
     longitudeDelta: 0.0421,
     altitude: 0
   })
+  const [isRoute, setIsRoute] = useState(false);
+
+  //Request Emergency state
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [reportLocation, setReportLocation] = useState("");
+  const [selectEmergencyType, setSelectEmergencyType] = useState(null);
+  const [emergencyStatus, setEmergencyStatus] = useState("waiting");
+  const [emergencyRequest, setEmergencyRequest] = useState([]);
   const [statusButton, setStatusButton] = useState("idle");
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [isRoute, setIsRoute] = useState(false);
+
+  //emergency profile state
+  const [showRequestModal, setShowRequestModal] = useState(false);
+
 
   //Autocomplete search state
   const [search, setSearch] = useState("");
@@ -88,12 +131,12 @@ const MapScreen = ({ user, setUser }) => {
       return;
     }
 
-    setIsFetching(true);
     try {
       let location = await Location.getCurrentPositionAsync({ enableHighAccuracy: true });
       let address = await Location.reverseGeocodeAsync(location.coords);
       setDetails(address[0]);
-      console.log("Full details", details);
+      setReportLocation(`${address[0].city}, ${address[0].region} ${address[0].streetNumber} ${address[0].street} ${address[0].district}`)
+      console.log("address", details);
       console.log('Location state:', location);
       setRegion(prevRegion => (
         {
@@ -105,7 +148,7 @@ const MapScreen = ({ user, setUser }) => {
       console.log("Region state:", region);
 
       const subscription = await Location.watchPositionAsync(
-        { enableHighAccuracy: true, distanceInterval: 5 },
+        { enableHighAccuracy: true, distanceInterval: 5 }, // default 5
         (newLocation) => {
           updateLocation(newLocation);
         }
@@ -113,16 +156,16 @@ const MapScreen = ({ user, setUser }) => {
 
     } catch (error) {
       toast(error.message);
-    } finally {
-      setIsFetching(false);
     }
   }
+  /* 
+    useEffect(() => {
+      fetchMyLocation();
+    }, []) */
 
-  useEffect(() => {
-    fetchMyLocation();
-  }, [])
-
-  const updateLocation = (location) => {
+  const updateLocation = async (location) => {
+    let newAddress = await Location.reverseGeocodeAsync(location?.coords);
+    setDetails(newAddress[0]);
     setRegion(prevRegion => (
       {
         ...prevRegion,
@@ -131,26 +174,38 @@ const MapScreen = ({ user, setUser }) => {
       }
     ));
     moveCamera(location?.coords.latitude, location?.coords.longitude);
-    console.log("Watch new position", location);
     updateRoute(location?.coords.latitude, location?.coords.longitude);
+
+    console.log("Watch new position", location);
+    console.log("New address", newAddress[0]);
   };
 
-  const saveUserLocation = async () => {
-    const userLocationRef = collection(db, "user-location")
-    setStatusButton("submitting");
-    setModalVisible(true);
-    try {
-      const docRef = await addDoc(userLocationRef, {
-        user: user.displayName,
-        uid: user.uid,
-        createdAt: serverTimestamp(),
-        latitude: region.latitude,
-        longitude: region.longitude,
-        address: { ...details }
-      });
+  const requestEmergency = async () => { //Will able to use this data for the inbox
 
-      console.log("Document written:", docRef.id);
-      setIsSaved(true);
+    try {
+      if (selectEmergencyType && reportLocation) {
+        setStatusButton("submitting");
+        setShowEmergencyModal(false);
+        setModalVisible(true);
+
+        const docRef = await addDoc(emergencyRequestRef, {
+          user: user.displayName,
+          uid: user.uid,
+          contactNumber: accountDetails.contactNumber,
+          emergencyType: selectEmergencyType,
+          emergencyStatus: emergencyStatus,
+          createdAt: serverTimestamp(),
+          latitude: region.latitude,
+          longitude: region.longitude,
+          fullAddress: reportLocation,
+          address: { ...details }
+        });
+
+        console.log("Document written:", docRef.id);
+        setIsSaved(true);
+      } else {
+        toast("You need select your emergency type and your location");
+      }
     } catch (error) {
       toast(error.message);
     } finally {
@@ -158,9 +213,36 @@ const MapScreen = ({ user, setUser }) => {
       setTimeout(() => {
         setIsSaved(false);
         setModalVisible(false);
+        setShowRequestModal(true); // state for emergency request modal
       }, 1000)
     }
   }
+
+
+  const updateUserLocationToDB = async () => {
+    const userDocRef = doc(db, "user-location", user.uid);
+    setStatusButton("submitting");
+    try {
+      await setDoc(userDocRef, {
+        user: user.displayName,
+        uid: user.uid,
+        createdAt: serverTimestamp(),
+        latitude: region.latitude,
+        longitude: region.longitude,
+        address: { ...details }
+      },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error(error.message);
+    } finally {
+      setStatusButton("idle");
+    }
+  }
+
+  /*   useEffect(() => {
+      updateUserLocationToDB();
+    }, [region]) */
 
   const onChangeText = async (text) => {
     setSearch(text);
@@ -275,7 +357,6 @@ const MapScreen = ({ user, setUser }) => {
         { latitude: 14.76911, longitude: 121.03718 },
       ];
      */
-
     } catch (error) {
       console.error(error.message);
     } finally {
@@ -382,6 +463,27 @@ const MapScreen = ({ user, setUser }) => {
     }
   };
 
+  const loadMyEmergencyRequest = async () => {
+    const q = query(emergencyRequestRef,
+        where("uid", "==", user.uid),
+        where("emergencyStatus", "==", "waiting"),
+        orderBy("createdAt", "desc")
+    );
+
+    onSnapshot(q, (querySnapshot) => {
+        const requestEmergency = querySnapshot.docs.map(doc => (
+            { ...doc.data(), id: doc.id }
+        ))
+        setEmergencyRequest(requestEmergency);
+
+        console.log("EmergencyProfileCard Snapshot", requestEmergency);
+    })
+}
+
+useEffect(() => {
+    loadMyEmergencyRequest();
+}, [])
+
 
   return (
     <View style={styles.container}>
@@ -392,7 +494,7 @@ const MapScreen = ({ user, setUser }) => {
         initialRegion={region}
         provider={PROVIDER_GOOGLE}
         showsUserLocation
-        //followsUserLocation
+      //followsUserLocation
       //showsTraffic
       >
         {details && (
@@ -460,20 +562,21 @@ const MapScreen = ({ user, setUser }) => {
       </MapView>
 
       <CustomButton
-        title={statusButton === "submitting" ? "Processing..." : "Send Location"}
+        title="Request Emergency"
         style={[styles.overlayButton, {
           bottom: 19,
-          right: 115,
+          right: 100,
         }]}
         textStyle={styles.overlayButtonText}
         textColor={defaultTheme}
-        onPress={saveUserLocation}
+        onPress={() => setShowEmergencyModal(!showEmergencyModal)}
         statusButton={statusButton}
       />
+
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: 165,
+          bottom: 215,
           right: 10,
           paddingHorizontal: 10,
           backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
@@ -487,10 +590,11 @@ const MapScreen = ({ user, setUser }) => {
           color={listOfHospitals.length <= 0 ? "rgb(179, 179, 179)" : defaultTheme}
         />
       </TouchableOpacity>
+
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: 115,
+          bottom: 165,
           right: 10,
           paddingHorizontal: 10,
           backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
@@ -504,6 +608,19 @@ const MapScreen = ({ user, setUser }) => {
           color={!newCoordinates ? "rgb(179, 179, 179)" : defaultTheme}
         />
       </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.3}
+        style={[styles.overlayButton, {
+          bottom: 115,
+          right: 10,
+          paddingHorizontal: 10,
+        }]}
+        onPress={() => setShowRequestModal(!showRequestModal)}
+      >
+        <AntDesign name="caretup" size={24} color={defaultTheme} />
+      </TouchableOpacity>
+
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
@@ -605,7 +722,7 @@ const MapScreen = ({ user, setUser }) => {
       </View>
 
       {/* Temporary display the data after fetching the location */}
-      {details && (
+      {showProfileDetails && (
         <View style={styles.overlayContainer}>
           <ScrollView
             style={{ height: 100 }}
@@ -633,11 +750,14 @@ const MapScreen = ({ user, setUser }) => {
         visible={showHospitals}
         onRequestClose={() => setShowHospitals(!showHospitals)}
       >
-        <View style={{
-          flex: 1,
-          alignItems: 'center',
-          backgroundColor: "rgba(0, 0, 0, 0.2)"
-        }}>
+        <Pressable
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            backgroundColor: "rgba(0, 0, 0, 0.2)"
+          }}
+          onPress={() => setShowHospitals(!showHospitals)}
+        >
           <View style={{
             backgroundColor: "white",
             position: "absolute",
@@ -646,24 +766,9 @@ const MapScreen = ({ user, setUser }) => {
             width: "100%",
             borderTopWidth: 5,
             borderColor: { defaultTheme },
-          }}>
-            <FontAwesome
-              name="arrow-down"
-              size={19}
-              color="white"
-              style={{
-                position: "absolute",
-                top: -40,
-                left: 110,
-                backgroundColor: { defaultTheme },
-                paddingHorizontal: 50,
-                paddingVertical: 10,
-                height: 40,
-                borderTopLeftRadius: 100,
-                borderTopRightRadius: 100
-              }}
-              onPress={() => setShowHospitals(!showHospitals)}
-            />
+          }}
+          >
+
             <FlatList
               data={listOfHospitals}
               keyExtractor={item => item.properties.datasource.raw.osm_id}
@@ -686,11 +791,8 @@ const MapScreen = ({ user, setUser }) => {
                     );
                   }}
                 >
-                  <FontAwesome5
-                    name="hospital"
-                    size={24}
-                    color={defaultTheme}
-                  />
+                  <FontAwesome5 name="hospital" size={24} color={defaultTheme} />
+
                   <View>
                     <Text style={styles.headerHospital}>{item.properties.address_line1}</Text>
                     <Text style={[styles.defaultFont, { marginBottom: 2 }]}>{item.properties.address_line2}</Text>
@@ -701,9 +803,7 @@ const MapScreen = ({ user, setUser }) => {
                 </TouchableOpacity>
               )}
               ListHeaderComponent={() => (
-                <Text
-                  style={[styles.headerHospital, styles.headerTitle]}
-                >
+                <Text style={[styles.headerHospital, styles.headerTitle]}>
                   List of Hospital base on your Location
                 </Text>
               )}
@@ -712,9 +812,25 @@ const MapScreen = ({ user, setUser }) => {
               )}
             />
           </View>
+        </Pressable>
+      </Modal>
 
-        </View>
-      </Modal >
+      {FindingHospitals && (
+        <StatusModal
+          status={FindingHospitals}
+          setStatus={setFindingHospitals}
+          message="We're looking a hospitals"
+        />
+      )}
+
+      {isRoute && (
+        <StatusModal
+          status={isRoute}
+          setStatus={setIsRoute}
+          message="Creating a route..."
+        />
+      )}
+
 
       <Modal
         animationType="fade"
@@ -729,33 +845,212 @@ const MapScreen = ({ user, setUser }) => {
               : (<ActivityIndicator size={40} color="#0288D1" />)
             }
             <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>
-              {isSaved ? "Your request has been saved." : "Processing..."}
+              {isSaved ? "Your request has been submitted." : "Processing..."}
             </Text>
           </View>
         </View>
       </Modal>
 
-      {isFetching && (
-        <StatusModal
-          status={isFetching}
-          setStatus={setIsFetching}
-          message="We're finding your location..."
-        />
-      )}
-      {isRoute && (
-        <StatusModal
-          status={isRoute}
-          setStatus={setIsRoute}
-          message="Creating a route..."
-        />
-      )}
-      {FindingHospitals && (
-        <StatusModal
-          status={FindingHospitals}
-          setStatus={setFindingHospitals}
-          message="We're looking a hospitals"
-        />
-      )}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showEmergencyModal}
+        onRequestClose={() => setShowEmergencyModal(!showEmergencyModal)}
+      >
+        <View
+          style={{
+            flex: 1,
+            alignItems: 'center',
+            backgroundColor: "rgba(0, 0, 0, 0.2)"
+          }}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              height: "55%",
+              width: "100%",
+              backgroundColor: "white",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingTop: 10,
+                paddingHorizontal: 20
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "NotoSans-Bold",
+                  fontSize: 20,
+                  color: defaultTheme
+                }}
+              >
+                Send report
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.2}
+                onPress={() => setShowEmergencyModal(!showEmergencyModal)}
+              >
+                <Feather name="x" size={30} color="black" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{
+              fontFamily: "NotoSans-SemiBold",
+              paddingHorizontal: 20,
+              color: "gray"
+            }}>
+              Whats your emergency?
+            </Text>
+
+
+            <View style={{ height: 80, paddingHorizontal: 20 }}>
+              <FlatList
+                data={emergencyTypes}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item, index) => index}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity
+                    style={{
+                      alignItems: "center",
+                      columnGap: 5,
+                      paddingTop: 5,
+                      paddingHorizontal: 5,
+                    }}
+                    onPress={() => {
+                      setSelectEmergencyType(item.type);
+                    }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: selectEmergencyType === item.type ? item.color : "gray",
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingHorizontal: 10,
+                        width: 50,
+                        height: 50,
+                        borderRadius: 25,
+                      }}
+                    >
+                      <FontAwesome5 name={item.iconName} size={24} color="black" />
+                    </View>
+                    <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>{item.type}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+
+            <Text style={{
+              paddingHorizontal: 20,
+              paddingVertical: 5,
+              color: "gray",
+              fontFamily: "NotoSans-SemiBold"
+            }}>
+              Location
+            </Text>
+
+            <View
+              style={{
+                marginHorizontal: 20,
+                borderWidth: 1,
+                borderColor: "gray",
+                borderRadius: 4,
+                position: "relative"
+              }}
+            >
+              <TextInput
+                placeholder='My location'
+                value={reportLocation}
+                onChangeText={text => setReportLocation(text)}
+                style={[styles.input, {
+                  color: "gray",
+                  fontFamily: "NotoSans-SemiBold"
+                }]}
+              />
+
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 7,
+                  right: 7
+                }}
+                onPress={() => {
+                  setShowEmergencyModal(!showEmergencyModal);
+                  fetchMyLocation()
+                }}
+              >
+                <MaterialIcons
+                  name="my-location"
+                  size={24}
+                  color={defaultTheme}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{
+              paddingHorizontal: 20,
+              paddingVertical: 5,
+              color: "gray",
+              fontFamily: "NotoSans-SemiBold"
+            }}>
+              Upload Photo
+              <Text style={{ color: "silver", fontSize: 11 }}> (optional)</Text>
+            </Text>
+
+            <View
+              style={{
+                marginHorizontal: 20,
+                borderWidth: 1,
+                borderColor: "gray",
+                borderRadius: 4,
+                position: "relative"
+              }}
+            >
+              <TouchableOpacity style={{ alignItems: "center", paddingVertical: 10 }}>
+                <MaterialCommunityIcons name="upload" size={24} color="gray" />
+                <Text style={{ fontFamily: "NotoSans-Medium", color: defaultTheme, fontSize: 12 }}>Upload photo</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: defaultTheme,
+                marginHorizontal: 20,
+                marginVertical: 10,
+                borderRadius: 4,
+              }}
+              onPress={requestEmergency}
+            >
+              <Text style={{
+                color: "white",
+                textAlign: "center",
+                fontFamily: "NotoSans-Medium",
+                paddingVertical: 7
+              }}
+              >Send report
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <EmergencyRequestCard
+        title="My Emergency Request"
+        emptyTitle="You don't have emergency request yet"
+        showRequestModal={showRequestModal}
+        setShowRequestModal={setShowRequestModal}
+        accountDetails={accountDetails}
+        emergencyRequest={emergencyRequest}
+      />
+
 
     </View >
   )

@@ -173,7 +173,7 @@ const LoginScreen = ({ user, setUser }) => {
         >
           <View style={modalView}>
             <Text style={[text, font]}>
-              Would you really like to reset your password via email?
+              Would you like to reset your password via email?
             </Text>
             <CustomButton
               title="YES"
