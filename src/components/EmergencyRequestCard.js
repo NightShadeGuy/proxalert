@@ -18,9 +18,10 @@ import {
 } from '../shared/utils';
 import {
     deleteDoc,
-    doc
+    doc,
+    updateDoc
 } from 'firebase/firestore';
-
+import { db } from '../config/firebase';
 
 const EmergencyRequestCard = ({
     title,
@@ -28,9 +29,12 @@ const EmergencyRequestCard = ({
     showRequestModal,
     setShowRequestModal,
     accountDetails,
-    emergencyRequest
+    emergencyRequest,
+    latitude,
+    longitude,
+    moveToRegion,
+    photoUrl
 }) => {
-    console.log("Emergency Request", accountDetails);
     const deleteEmergencyRequest = async (id) => {
         try {
             await deleteDoc(doc(emergencyRequestRef, id));
@@ -38,6 +42,31 @@ const EmergencyRequestCard = ({
             toast(err.message);
         }
     }
+
+    const acceptEmergencyRequestFromUser = async (user, id) => {
+        try {
+            const emergencyRequestRef = doc(db, "emergency-request", id);
+
+            await updateDoc(emergencyRequestRef, {
+                emergencyStatus: "accepted",
+                responderUid: accountDetails.uid,
+                responder: {
+                    name: accountDetails.user,
+                    contactNumber: accountDetails.contactNumber,
+                    photoUrl,
+                    latitude,
+                    longitude,
+                }
+            });
+            moveToRegion(user.latitude, user.longitude, 0.0922,  0.0421)
+        } catch (error) {
+            console.error(error.message);
+        } finally {
+            setShowRequestModal(!showRequestModal);
+        }
+    }
+
+
 
     return (
         <Modal
@@ -75,12 +104,12 @@ const EmergencyRequestCard = ({
 
                                 {!accountDetails.isResponder && (
                                     <View style={[styles.row, { justifyContent: "flex-end" }]}>
-                                        <TouchableOpacity 
-                                          style={{
-                                            paddingVertical: 5,
-                                            
-                                          }}
-                                           onPress={() => deleteEmergencyRequest(item.id)}
+                                        <TouchableOpacity
+                                            style={{
+                                                paddingVertical: 5,
+
+                                            }}
+                                            onPress={() => deleteEmergencyRequest(item.id)}
                                         >
                                             <Text style={[styles.text, { color: "red" }]}>Cancel Request</Text>
                                         </TouchableOpacity>
@@ -100,11 +129,13 @@ const EmergencyRequestCard = ({
                                             style={[styles.button, {
                                                 backgroundColor: "#228353",
                                             }]}
+                                            onPress={() => acceptEmergencyRequestFromUser(item, item.id)}
                                         >
                                             <Text style={styles.btnText}>Accept</Text>
                                         </TouchableOpacity>
                                     </View>
                                 ) : (
+
                                     <View style={{
                                         flexDirection: "row",
                                         alignItems: "center",
@@ -116,7 +147,9 @@ const EmergencyRequestCard = ({
                                         borderRadius: 6
                                     }}>
                                         <ActivityIndicator size={30} color={defaultTheme} />
-                                        <Text style={styles.text}>Waiting to accept, please wait...</Text>
+                                        <Text style={styles.text}>
+                                            Waiting to accept, please wait...
+                                        </Text>
                                     </View>
                                 )}
                             </View>

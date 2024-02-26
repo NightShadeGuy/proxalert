@@ -6,7 +6,6 @@ import {
   TextInput,
   Pressable,
   TouchableOpacity,
-  Alert
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
@@ -30,8 +29,10 @@ const RegisterScreen = ({ user, setUser }) => {
   const {
     container,
     headerText,
+    row,
     text,
     font,
+    optional,
     input,
     button,
     section
@@ -39,14 +40,14 @@ const RegisterScreen = ({ user, setUser }) => {
   console.log("Register Screen", user);
 
   const navigation = useNavigation();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
   const [registerAsResponder, setRegisterAsResponder] = useState(false);
   const [loading, setLoading] = useState(false)
-
 
   const handleRegister = async () => {
     setLoading(true);
@@ -85,7 +86,10 @@ const RegisterScreen = ({ user, setUser }) => {
 
   const updateUserInfo = async () => {
     try {
-      await updateProfile(auth.currentUser, { displayName: name });
+      await updateProfile(auth.currentUser, { 
+        displayName: name,
+        photoURL: photoUrl
+       });
       console.log("update profile sucessfully");
     } catch (error) {
       console.error(error.message);
@@ -97,9 +101,7 @@ const RegisterScreen = ({ user, setUser }) => {
       const docRef = await addDoc(accountsRef, {
         user: name,
         uid: user.uid,
-        /* email: email, */
         contactNumber: phone,
-        /* password: password, */
         createAt: serverTimestamp(),
         isResponder: registerAsResponder
       })
@@ -116,13 +118,23 @@ const RegisterScreen = ({ user, setUser }) => {
 
       <View style={section}>
         <View>
-          <Text style={[text, font]}>Name</Text>
+          <View style={row}>
+            <Text style={[text, font]}>Name</Text>
+            <Text style={[[text, font, optional]]}>
+              (required)
+            </Text>
+          </View>
           <TextInput
             style={[input, font]}
             onChangeText={(text) => setName(text)} />
         </View>
         <View>
-          <Text style={[text, font]}>Email</Text>
+          <View style={row}>
+            <Text style={[text, font]}>Email</Text>
+            <Text style={[[text, font, optional]]}>
+              (required)
+            </Text>
+          </View>
           <TextInput
             style={[input, font]}
             keyboardType="email-address"
@@ -130,7 +142,12 @@ const RegisterScreen = ({ user, setUser }) => {
           />
         </View>
         <View>
-          <Text style={[text, font]}>Phone</Text>
+          <View style={row}>
+            <Text style={[text, font]}>Phone</Text>
+            <Text style={[[text, font, optional]]}>
+              (required)
+            </Text>
+          </View>
           <TextInput
             style={[input, font]}
             keyboardType="numeric"
@@ -138,7 +155,24 @@ const RegisterScreen = ({ user, setUser }) => {
           />
         </View>
         <View>
-          <Text style={[text, font]}>Password</Text>
+          <View style={row}>
+            <Text style={[text, font]}>Photo URL</Text>
+            <Text style={[[text, font, optional]]}>
+              (Optional)
+            </Text>
+          </View>
+          <TextInput
+            style={[input, font]}
+            onChangeText={(text) => setPhotoUrl(text)}
+          />
+        </View>
+        <View>
+          <View style={row}>
+            <Text style={[text, font]}>Password</Text>
+            <Text style={[[text, font, optional]]}>
+              (required)
+            </Text>
+          </View>
           <TextInput
             value={password}
             style={[input, font]}
@@ -147,7 +181,12 @@ const RegisterScreen = ({ user, setUser }) => {
           />
         </View>
         <View>
-          <Text style={[text, font]}>Confirm Password</Text>
+          <View style={row}>
+            <Text style={[text, font]}>Confirm Password</Text>
+            <Text style={[[text, font, optional]]}>
+              (required)
+            </Text>
+          </View>
           <TextInput
             value={confirmPass}
             style={[input, font]}
@@ -158,17 +197,6 @@ const RegisterScreen = ({ user, setUser }) => {
 
 
         <View>
-          <Text
-            style={{
-              justifyContent: "flex-start",
-              color: "gray",
-              marginVertical: 10,
-              marginLeft: 10
-            }}
-          >
-            (Optional)
-          </Text>
-
           <TouchableOpacity
             style={{
               flexDirection: "row",
@@ -183,7 +211,7 @@ const RegisterScreen = ({ user, setUser }) => {
               size={40}
               color={registerAsResponder ? defaultTheme : "gray"}
             />
-            <Text style={[font]}>Do you want to register as responder?</Text>
+            <Text style={font}>Do you want to register as responder?</Text>
           </TouchableOpacity>
         </View>
 
@@ -195,7 +223,8 @@ const RegisterScreen = ({ user, setUser }) => {
           textStyle={[text, font, { textAlign: "center", marginTop: 7 }]}
           onPress={handleRegister}
         />
-        <Pressable
+        <TouchableOpacity
+          activeOpacity={0.5}
           onPress={() => navigation.navigate("Login")}
         >
           <Text
@@ -208,7 +237,7 @@ const RegisterScreen = ({ user, setUser }) => {
           >
             I already have an account.
           </Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
     </ScrollView>
@@ -219,6 +248,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    columnGap: -5
   },
   headerText: {
     fontSize: 24,
@@ -238,6 +272,11 @@ const styles = StyleSheet.create({
   font: {
     fontFamily: "NotoSans-Medium"
   },
+  optional: {
+    color: "gray",
+    fontSize: 11,
+    textTransform: "lowercase"
+  },
   input: {
     padding: 10,
     width: 320,
@@ -253,7 +292,7 @@ const styles = StyleSheet.create({
     backgroundColor: defaultTheme,
     borderRadius: 20,
     flexShrink: 0,
-    marginTop: 50,
+    marginTop: 10
   },
 })
 

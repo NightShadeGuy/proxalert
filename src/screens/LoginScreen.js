@@ -5,7 +5,8 @@ import {
   StyleSheet,
   Pressable,
   Modal,
-  Alert
+  Alert,
+  TouchableOpacity
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
@@ -44,8 +45,8 @@ const LoginScreen = ({ user, setUser }) => {
         const account = await signInWithEmailAndPassword(auth, email, password);
         console.log("Successfully logged in", account);
         setUser(account);
-          
-        if(account.user.emailVerified) {
+
+        if (account.user.emailVerified) {
           navigation.navigate("Main");
         } else {
           await verifyEmail(account.user);
@@ -146,7 +147,8 @@ const LoginScreen = ({ user, setUser }) => {
           loading={loading}
           onPress={logIn}
         />
-        <Pressable
+        <TouchableOpacity
+          activeOpacity={0.5}
           onPress={() => navigation.navigate("Register")}
         >
           <Text
@@ -158,7 +160,7 @@ const LoginScreen = ({ user, setUser }) => {
           >
             I dont have an account.
           </Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
 
       <Modal

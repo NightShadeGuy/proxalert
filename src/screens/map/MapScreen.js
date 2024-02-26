@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   TouchableHighlight,
   ScrollView,
-  Pressable
+  Pressable,
+  Image
 } from 'react-native'
 import React, {
   useState,
@@ -55,11 +56,17 @@ import polyline from '@mapbox/polyline';
 import { useNavigation } from '@react-navigation/native';
 import { emergencyRequestRef, emergencyTypes } from "../../shared/utils";
 import EmergencyRequestCard from '../../components/EmergencyRequestCard';
+import AcceptRequestCard from '../../components/AcceptRequestCard';
 
-const MapScreen = ({ user, setUser, accountDetails }) => {
+const MapScreen = ({
+  user,
+  setUser,
+  accountDetails,
+  userAndResponderDetails,
+  setUserAndResponderDetails }) => {
   const navigation = useNavigation();
   console.log("Current user", user);
-  console.log("accounts detaisl", accountDetails);
+  console.log("accounts details", accountDetails);
   const [showProfileDetails, setShowProfileDetails] = useState(false);
 
   useLayoutEffect(() => {  //use for UI loads
@@ -95,13 +102,17 @@ const MapScreen = ({ user, setUser, accountDetails }) => {
   const [reportLocation, setReportLocation] = useState("");
   const [selectEmergencyType, setSelectEmergencyType] = useState(null);
   const [emergencyStatus, setEmergencyStatus] = useState("waiting");
-  const [emergencyRequest, setEmergencyRequest] = useState([]);
   const [statusButton, setStatusButton] = useState("idle");
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  //Onsnaphot state
+  const [acceptedRequest, setAcceptedRequest] = useState([]);
+  const [emergencyRequest, setEmergencyRequest] = useState([]);
+
   //emergency profile state
   const [showRequestModal, setShowRequestModal] = useState(false);
+
 
 
   //Autocomplete search state
@@ -180,8 +191,7 @@ const MapScreen = ({ user, setUser, accountDetails }) => {
     console.log("New address", newAddress[0]);
   };
 
-  const requestEmergency = async () => { //Will able to use this data for the inbox
-
+  const requestEmergency = async () => {
     try {
       if (selectEmergencyType && reportLocation) {
         setStatusButton("submitting");
@@ -192,6 +202,7 @@ const MapScreen = ({ user, setUser, accountDetails }) => {
           user: user.displayName,
           uid: user.uid,
           contactNumber: accountDetails.contactNumber,
+          photoUrl: user.photoURL,
           emergencyType: selectEmergencyType,
           emergencyStatus: emergencyStatus,
           createdAt: serverTimestamp(),
@@ -217,32 +228,6 @@ const MapScreen = ({ user, setUser, accountDetails }) => {
       }, 1000)
     }
   }
-
-
-  const updateUserLocationToDB = async () => {
-    const userDocRef = doc(db, "user-location", user.uid);
-    setStatusButton("submitting");
-    try {
-      await setDoc(userDocRef, {
-        user: user.displayName,
-        uid: user.uid,
-        createdAt: serverTimestamp(),
-        latitude: region.latitude,
-        longitude: region.longitude,
-        address: { ...details }
-      },
-        { merge: true }
-      );
-    } catch (error) {
-      console.error(error.message);
-    } finally {
-      setStatusButton("idle");
-    }
-  }
-
-  /*   useEffect(() => {
-      updateUserLocationToDB();
-    }, [region]) */
 
   const onChangeText = async (text) => {
     setSearch(text);
@@ -463,26 +448,55 @@ const MapScreen = ({ user, setUser, accountDetails }) => {
     }
   };
 
-  const loadMyEmergencyRequest = async () => {
+  const loadEmergencyRequest = async () => {
     const q = query(emergencyRequestRef,
-        where("uid", "==", user.uid),
-        where("emergencyStatus", "==", "waiting"),
-        orderBy("createdAt", "desc")
+      where("uid", "==", user.uid),
+      where("emergencyStatus", "==", "waiting"),
+      orderBy("createdAt", "desc")
     );
 
     onSnapshot(q, (querySnapshot) => {
-        const requestEmergency = querySnapshot.docs.map(doc => (
-            { ...doc.data(), id: doc.id }
-        ))
-        setEmergencyRequest(requestEmergency);
+      const requestEmergency = querySnapshot.docs.map(doc => (
+        { ...doc.data(), id: doc.id }
+      ))
+      setEmergencyRequest(requestEmergency);
 
-        console.log("EmergencyProfileCard Snapshot", requestEmergency);
+      console.log("User emergency request snapshot", requestEmergency);
     })
-}
+  }
 
-useEffect(() => {
-    loadMyEmergencyRequest();
-}, [])
+  const loadAcceptedRequest = async () => {
+    const q = query(emergencyRequestRef,
+      where("uid", "==", user.uid),
+      where("emergencyStatus", "==", "accepted"),
+      orderBy("createdAt", "desc")
+    );
+
+    onSnapshot(q, (querySnapshot) => {
+      const acceptedEmergencyRequest = querySnapshot.docs.map(doc => (
+        { ...doc.data(), id: doc.id }
+      ))
+      console.log("User accepted request snapshot", acceptedEmergencyRequest);
+
+      const getUserInfo = acceptedEmergencyRequest.find(info => info.uid === user.uid);
+      if (getUserInfo) {
+        setAcceptedRequest(getUserInfo);
+        setShowRequestModal(false); //this will the hide the modal when responder accept the request
+      } else {
+        setAcceptedRequest(null);
+      }
+    })
+  }
+
+  useEffect(() => {
+    loadEmergencyRequest();
+    loadAcceptedRequest();
+  }, [])
+
+
+  useEffect(() => {
+    console.log("Your accepted request", acceptedRequest);
+  }, [acceptedRequest]);
 
 
   return (
@@ -500,14 +514,25 @@ useEffect(() => {
         {details && (
           <Marker
             coordinate={region}
-            title={user?.displayName ? `User: ${user?.displayName}` : "Please Edit your name in the settings"}
+            title={`Me: ${user?.displayName}`}
             description={`${details?.streetNumber} ${details?.street} ${details?.district}`}
           >
-            <MaterialCommunityIcons
-              name="human-handsup"
-              size={40}
-              color="green"
-            />
+            {user.photoURL ? (
+              <Image
+                source={{ uri: user.photoURL }}
+                style={{
+                  height: 40,
+                  width: 40,
+                  borderRadius: 20,
+                }}
+              />
+            ) : (
+              <MaterialCommunityIcons
+                name="human-handsup"
+                size={40}
+                color="green"
+              />
+            )}
           </Marker>
         )}
 
@@ -559,6 +584,29 @@ useEffect(() => {
             strokeWidth={5}
           />
         )}
+
+        {/* Responder coordinates */}
+        {acceptedRequest && acceptedRequest.latitude && acceptedRequest.longitude && (
+          <Marker
+            coordinate={{
+              latitude: acceptedRequest.responder.latitude,
+              longitude: acceptedRequest.responder.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+            title={`Responder: ${acceptedRequest.responder.name}`}
+            description={`Contact number: ${acceptedRequest.responder.contactNumber}`}
+          >
+            <Image
+              source={{ uri: acceptedRequest.responder.photoUrl }}
+              style={{
+                height: 40,
+                width: 40,
+                borderRadius: 20,
+              }}
+            />
+          </Marker>
+        )}
       </MapView>
 
       <CustomButton
@@ -576,7 +624,7 @@ useEffect(() => {
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: 215,
+          bottom: acceptedRequest ? 220 : 215,
           right: 10,
           paddingHorizontal: 10,
           backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
@@ -594,7 +642,7 @@ useEffect(() => {
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: 165,
+          bottom: acceptedRequest ? 170  : 165,
           right: 10,
           paddingHorizontal: 10,
           backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
@@ -609,22 +657,25 @@ useEffect(() => {
         />
       </TouchableOpacity>
 
-      <TouchableOpacity
-        activeOpacity={0.3}
-        style={[styles.overlayButton, {
-          bottom: 115,
-          right: 10,
-          paddingHorizontal: 10,
-        }]}
-        onPress={() => setShowRequestModal(!showRequestModal)}
-      >
-        <AntDesign name="caretup" size={24} color={defaultTheme} />
-      </TouchableOpacity>
+
+      {!acceptedRequest && (  //If my request is accepted hide this
+        <TouchableOpacity
+          activeOpacity={0.3}
+          style={[styles.overlayButton, {
+            bottom: 115,
+            right: 10,
+            paddingHorizontal: 10,
+          }]}
+          onPress={() => setShowRequestModal(!showRequestModal)}
+        >
+          <AntDesign name="caretup" size={24} color={defaultTheme} />
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: 65,
+          bottom: acceptedRequest ? 120 : 65,
           right: 10,
           paddingHorizontal: 10,
         }]}
@@ -1049,8 +1100,21 @@ useEffect(() => {
         setShowRequestModal={setShowRequestModal}
         accountDetails={accountDetails}
         emergencyRequest={emergencyRequest}
+        moveToRegion={moveToRegion}
       />
 
+      {acceptedRequest && acceptedRequest.responder && acceptedRequest.responder.name && (
+        <AcceptRequestCard
+          name={acceptedRequest.responder.name}
+          contactNumber={acceptedRequest.responder.contactNumber}
+          accountDetails={accountDetails}
+          latitude={acceptedRequest.responder.latitude}
+          longitude={acceptedRequest.responder.longitude}
+          moveToRegion={moveToRegion}
+          documentId={acceptedRequest.id}
+          photoUrl={acceptedRequest.responder.photoUrl}
+        />
+      )}
 
     </View >
   )

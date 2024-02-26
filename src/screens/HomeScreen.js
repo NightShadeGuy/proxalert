@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   Image,
   Pressable,
   Animated,
+  TouchableOpacity,
 } from 'react-native';
 import { auth } from "../config/firebase";
 import { signOut } from "firebase/auth";
@@ -26,6 +27,7 @@ const HomeScreen = ({ user, setUser }) => {
     text,
     image,
     sameRow,
+    profile,
     section,
     headerColor,
     font,
@@ -81,12 +83,28 @@ const HomeScreen = ({ user, setUser }) => {
           >
             {user?.displayName ? `Hello, ${user?.displayName}!` : "Hey, User!"}
           </Text>
-          <FontAwesome
-            name="gear"
-            size={24}
-            color="#D64045"
-            onPress={() => navigation.navigate("Settings")}
-          />
+          {user.photoURL ? (
+            <TouchableOpacity
+              style={styles.profile}
+              onPress={() => navigation.navigate("Settings")}
+            >
+              <Image
+                source={{ uri: user.photoURL }}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                }}
+              />
+            </TouchableOpacity>
+          ) : (
+            <FontAwesome
+              name="gear"
+              size={24}
+              color="#D64045"
+              onPress={() => navigation.navigate("Settings")}
+            />
+          )}
         </View>
 
         {user.emailVerified && (
@@ -173,6 +191,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between"
   },
+  profile: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 5,
+      height: 2,
+    },
+    shadowOpacity: 1, 
+    shadowRadius: 20,
+    elevation: 20,
+  },
   textSection: {
     alignItems: "center",
     marginVertical: 30
@@ -195,5 +226,5 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     padding: 50
-  },
+  }
 })

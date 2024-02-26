@@ -52,8 +52,13 @@ import {
 import polyline from '@mapbox/polyline';
 import { useNavigation } from '@react-navigation/native';
 import EmergencyRequestCard from '../../components/EmergencyRequestCard';
+import AcceptRequestCard from '../../components/AcceptRequestCard';
 
-const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
+const ResponderMapScreen = ({
+    user,
+    setUser,
+    accountDetails,
+}) => {
     const navigation = useNavigation();
     //console.log("Current user", user);
     //console.log("responderDetails", responderDetails);
@@ -72,7 +77,6 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
                         color="white"
                     />
                 </TouchableOpacity>
-
             )
         })
     }, [showProfileDetails])
@@ -90,9 +94,13 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
     //const [isSaved, setIsSaved] = useState(false);
     const [isRoute, setIsRoute] = useState(false);
 
+
     //Emergency state
     const [showRequestModal, setShowRequestModal] = useState(false);
+
+    //Onsnapshot state
     const [emergencyRequest, setEmergencyRequest] = useState([]);
+    const [acceptedRequest, setAcceptedRequest] = useState([]);
 
     //Autocomplete search state
     const [search, setSearch] = useState("");
@@ -168,29 +176,6 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
         console.log("Watch new position", location);
         console.log("New address", newAddress[0]);
     };
-
-    const updateResponderLocationToDB = async () => {
-        const userDocRef = doc(db, "responder-location", user.uid);
-        try {
-            await setDoc(userDocRef, {
-                user: user.displayName,
-                uid: user.uid,
-                contactNumber: accountDetails.contactNumber,
-                createdAt: serverTimestamp(),
-                latitude: region.latitude,
-                longitude: region.longitude,
-                address: { ...details }
-            },
-                { merge: true }
-            );
-        } catch (error) {
-            console.error(error.message);
-        }
-    }
-
-    /*   useEffect(() => {
-          updateResponderLocationToDB();
-      }, [region]) */
 
     const onChangeText = async (text) => {
         setSearch(text);
@@ -412,25 +397,55 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
         }
     };
 
-    const loadMyEmergencyRequest = async () => {
+
+    /* Display all the request of users */
+    const loadEmergencyRequest = async () => {
         const q = query(emergencyRequestRef,
             where("emergencyStatus", "==", "waiting"),
             orderBy("createdAt", "asc")
         );
-    
+
         onSnapshot(q, (querySnapshot) => {
             const requestEmergency = querySnapshot.docs.map(doc => (
                 { ...doc.data(), id: doc.id }
             ))
             setEmergencyRequest(requestEmergency);
-    
-            console.log("EmergencyProfileCard Snapshot for responder", requestEmergency);
+
+            console.log("Responder load emergency request", requestEmergency);
         })
     }
-    
+
+    const loadAcceptedRequest = async () => {
+        const q = query(emergencyRequestRef,
+            where("responderUid", "==", user.uid),
+            where("emergencyStatus", "==", "accepted"),
+            orderBy("createdAt", "desc")
+        );
+
+        onSnapshot(q, (querySnapshot) => {
+            const acceptedEmergencyRequest = querySnapshot.docs.map(doc => (
+                { ...doc.data(), id: doc.id }
+            ))
+            console.log("Responder accepted request snapshot", acceptedEmergencyRequest);
+
+            const getUserInfo = acceptedEmergencyRequest.find(info => info.responderUid === user.uid);
+            if (getUserInfo) {
+                setAcceptedRequest(getUserInfo);
+            } else {
+                setAcceptedRequest(null);
+            }
+        })
+    }
+
+
     useEffect(() => {
-        loadMyEmergencyRequest();
+        loadEmergencyRequest();
+        loadAcceptedRequest();
     }, [])
+
+    useEffect(() => {
+        console.log("Your accepted request", acceptedRequest);
+    }, [acceptedRequest]);
 
 
     return (
@@ -445,20 +460,32 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
             //followsUserLocation
             //showsTraffic
             >
+  
                 {details && (
                     <Marker
                         coordinate={region}
-                        title={`Responder: ${user?.displayName}`}
+                        title={`Me: ${user.displayName}`}
                         description={`Contact Number: ${accountDetails.contactNumber}`}
                     >
-                        <Image
-                            source={{ uri: "https://i.pinimg.com/564x/6e/85/40/6e85408d47cd78ba6cd3d3a188035795.jpg" }}
-                            style={{
-                                height: 40,
-                                width: 40,
-                                borderRadius: 20,
-                            }}
-                        />
+                        {user.photoURL ? (
+                            <Image
+                                source={{ uri: user.photoURL }}
+                                style={{
+                                    height: 40,
+                                    width: 40,
+                                    borderRadius: 20,
+                                }}
+                            />
+                        ) : (
+                            <Image
+                                source={{ uri: "https://i.pinimg.com/564x/6e/85/40/6e85408d47cd78ba6cd3d3a188035795.jpg" }}
+                                style={{
+                                    height: 40,
+                                    width: 40,
+                                    borderRadius: 20,
+                                }}
+                            />
+                        )}
                     </Marker>
                 )}
 
@@ -510,6 +537,29 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
                         strokeWidth={5}
                     />
                 )}
+
+                {/* Accepted user request */}
+                {acceptedRequest && acceptedRequest.latitude && acceptedRequest.longitude && (
+                    <Marker
+                        coordinate={{
+                            latitude: acceptedRequest.latitude,
+                            longitude: acceptedRequest.longitude,
+                            latitudeDelta: 0.0922,
+                            longitudeDelta: 0.0421,
+                        }}
+                        title={`Name: ${acceptedRequest.user}`}
+                        description={`Emergency type: ${acceptedRequest.emergencyType}`}
+                    >
+                        <Image
+                            source={{ uri: acceptedRequest.photoUrl }}
+                            style={{
+                                height: 40,
+                                width: 40,
+                                borderRadius: 20,
+                            }}
+                        />
+                    </Marker>
+                )}
             </MapView>
 
             <CustomButton
@@ -526,7 +576,7 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
             <TouchableOpacity
                 activeOpacity={0.3}
                 style={[styles.overlayButton, {
-                    bottom: 165,
+                    bottom: acceptedRequest ? 220 : 165,
                     right: 10,
                     paddingHorizontal: 10,
                     backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
@@ -543,7 +593,7 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
             <TouchableOpacity
                 activeOpacity={0.3}
                 style={[styles.overlayButton, {
-                    bottom: 115,
+                    bottom: acceptedRequest ? 170 : 115,
                     right: 10,
                     paddingHorizontal: 10,
                     backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
@@ -560,7 +610,7 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
             <TouchableOpacity
                 activeOpacity={0.3}
                 style={[styles.overlayButton, {
-                    bottom: 65,
+                    bottom: acceptedRequest ? 120 : 65,
                     right: 10,
                     paddingHorizontal: 10,
                 }]}
@@ -769,24 +819,6 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
                 </View>
             </Modal >
 
-            {/*  <Modal
-                animationType="fade"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(!modalVisible)}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalView}>
-                        {isSaved ? (
-                            <Ionicons name="md-checkmark-circle" size={30} color="#4caf50" />)
-                            : (<ActivityIndicator size={40} color="#0288D1" />)
-                        }
-                        <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>
-                            {isSaved ? "Your request has been saved." : "Processing..."}
-                        </Text>
-                    </View>
-                </View>
-            </Modal> */}
 
             {isRoute && (
                 <StatusModal
@@ -795,6 +827,7 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
                     message="Creating a route..."
                 />
             )}
+
             {FindingHospitals && (
                 <StatusModal
                     status={FindingHospitals}
@@ -803,14 +836,34 @@ const ResponderMapScreen = ({ user, setUser, accountDetails }) => {
                 />
             )}
 
-            <EmergencyRequestCard 
-               title="Persons who needs help"
-               emptyTitle="Currently no one has asked for assistance"
-               showRequestModal={showRequestModal}
-               setShowRequestModal={setShowRequestModal}
-               accountDetails={accountDetails}
-               emergencyRequest={emergencyRequest}
+            <EmergencyRequestCard
+                title="Persons who needs help"
+                emptyTitle="Currently no one has asked for assistance"
+                showRequestModal={showRequestModal}
+                setShowRequestModal={setShowRequestModal}
+                emergencyRequest={emergencyRequest}
+                setEmergencyRequest={setEmergencyRequest}
+                accountDetails={accountDetails}
+                latitude={region.latitude}
+                longitude={region.longitude}
+                moveToRegion={moveToRegion}
+                photoUrl={user.photoURL}
             />
+
+            {acceptedRequest && (
+                <AcceptRequestCard
+                    name={acceptedRequest.user}
+                    contactNumber={acceptedRequest.contactNumber}
+                    emergencyType={acceptedRequest.emergencyType}
+                    fullAddress={acceptedRequest.fullAddress}
+                    accountDetails={accountDetails}
+                    latitude={acceptedRequest.latitude}
+                    longitude={acceptedRequest.longitude}
+                    moveToRegion={moveToRegion}
+                    documentId={acceptedRequest.id}
+                    photoUrl={acceptedRequest.photoUrl}
+                />
+            )}
 
         </View >
     )

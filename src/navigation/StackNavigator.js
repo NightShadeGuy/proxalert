@@ -41,7 +41,7 @@ const StackNavigator = () => {
   }, [user])
 
 
-  const loadResponders = async () => {
+  const loadAccounts = async () => {
     try {
       onSnapshot(accountsRef, (querySnapshot) => {
         const accounts = querySnapshot.docs.map(doc => (
@@ -65,12 +65,12 @@ const StackNavigator = () => {
     }
   }
 
-  console.log("Snapshot loadResponders", responders);
-  console.log("Is this current user a responder", isResponder);
-
   useEffect(() => {
-    loadResponders();
+    loadAccounts();
   }, [user])
+
+  console.log("Snapshot loadAccounts", responders);
+  console.log("Is this current user a responder", isResponder);
 
   return (
     <NavigationContainer>
@@ -81,10 +81,7 @@ const StackNavigator = () => {
         }}
       >
         {!user && (
-          <Stack.Screen
-            name="Get Started"
-            component={GetStartedScreen}
-          />
+          <Stack.Screen name="Get Started" component={GetStartedScreen} />
         )}
         {user && (
           <Stack.Screen name="Main">
