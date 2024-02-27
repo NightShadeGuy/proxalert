@@ -57,8 +57,8 @@ const EmergencyRequestCard = ({
                     latitude,
                     longitude,
                 }
-            });
-            moveToRegion(user.latitude, user.longitude, 0.0922,  0.0421)
+            }, { merge: true });
+            moveToRegion(user.latitude, user.longitude, 0.0922, 0.0421)
         } catch (error) {
             console.error(error.message);
         } finally {

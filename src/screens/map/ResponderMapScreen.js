@@ -3,7 +3,6 @@ import {
     View,
     Text,
     Modal,
-    ActivityIndicator,
     TextInput,
     FlatList,
     TouchableOpacity,
@@ -24,20 +23,23 @@ import MapView, {
     PROVIDER_GOOGLE
 } from 'react-native-maps';
 import CustomButton from "../../components/CustomButton";
+import { db } from '../../config/firebase';
 import {
-    doc,
-    setDoc,
-    serverTimestamp,
     onSnapshot,
     query,
     where,
     orderBy,
+    doc,
+    getDoc,
+    updateDoc
 } from 'firebase/firestore';
-import { db } from "../../config/firebase";
-import { toast, defaultTheme, emergencyRequestRef } from '../../shared/utils';
+import {
+    toast,
+    defaultTheme,
+    emergencyRequestRef,
+} from '../../shared/utils';
 import {
     AntDesign,
-    Ionicons,
     FontAwesome,
     FontAwesome5,
     MaterialIcons,
@@ -100,7 +102,7 @@ const ResponderMapScreen = ({
 
     //Onsnapshot state
     const [emergencyRequest, setEmergencyRequest] = useState([]);
-    const [acceptedRequest, setAcceptedRequest] = useState([]);
+    const [acceptedRequest, setAcceptedRequest] = useState(null);
 
     //Autocomplete search state
     const [search, setSearch] = useState("");
@@ -113,10 +115,10 @@ const ResponderMapScreen = ({
     const [routes, setRoutes] = useState([]);
     const [routeCoordinates, setRouteCoordinates] = useState([]);
     const [newCoordinates, setNewCoordinates] = useState(null)  // use for destination
-    //console.log("New coordinates", newCoordinates);
     const [decodedCoordinates, setDecodedCoordinates] = useState([]);
+    //console.log("New coordinates", newCoordinates);
     //console.log("routes", routes);
-    //console.log("decoded", decodedCoordinates);
+    console.log("decoded", decodedCoordinates);
 
     const [listOfHospitals, setListOfHospitals] = useState([]);
     const [showHospitals, setShowHospitals] = useState(false);
@@ -133,8 +135,8 @@ const ResponderMapScreen = ({
             let location = await Location.getCurrentPositionAsync({ enableHighAccuracy: true });
             let address = await Location.reverseGeocodeAsync(location.coords);
             setDetails(address[0]);
-            console.log("address", address[0]);
-            console.log('Location state:', location);
+            //console.log("address", address[0]);
+            //console.log('Location state:', location);
             setRegion(prevRegion => (
                 {
                     ...prevRegion,
@@ -145,7 +147,10 @@ const ResponderMapScreen = ({
             console.log("Region state:", region);
 
             const subscription = await Location.watchPositionAsync(
-                { enableHighAccuracy: true, distanceInterval: 5 },
+                {
+                    enableHighAccuracy: true,
+                    distanceInterval: 5
+                },
                 (newLocation) => {
                     updateLocation(newLocation);
                 }
@@ -156,9 +161,9 @@ const ResponderMapScreen = ({
         }
     }
 
-    /*    useEffect(() => {
-           fetchMyLocation();
-       }, []) */
+    useEffect(() => {
+        fetchMyLocation();
+    }, [])
 
     const updateLocation = async (location) => {
         let newAddress = await Location.reverseGeocodeAsync(location?.coords);
@@ -172,9 +177,16 @@ const ResponderMapScreen = ({
         ));
         moveCamera(location?.coords.latitude, location?.coords.longitude);
         updateRoute(location?.coords.latitude, location?.coords.longitude);
-
         console.log("Watch new position", location);
         console.log("New address", newAddress[0]);
+
+        if (acceptedRequest && (region.latitude !== location.coords.latitude || region.longitude !== location.coords.longitude)) {
+            updateResponderLocationToDB(
+                location.coords.latitude,
+                location.coords.longitude,
+                acceptedRequest.id
+            );
+        }
     };
 
     const onChangeText = async (text) => {
@@ -208,6 +220,29 @@ const ResponderMapScreen = ({
     
         return coordinates;
       } */
+
+    const updateResponderLocationToDB = async (latitude, longitude, documentId) => {
+        try {
+            const emergencyRequestRef = doc(db, "emergency-request", documentId);
+            const docSnapshot = await getDoc(emergencyRequestRef);
+
+            if (docSnapshot.exists()) {
+                const existingData = docSnapshot.data();
+                const updatedResponder = {
+                    ...existingData.responder,
+                    latitude,
+                    longitude
+                };
+
+                await updateDoc(emergencyRequestRef, {
+                    responder: updatedResponder
+                });
+                console.log("Successfully updated the coordinates of responder in DB");
+            }
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
 
     const fetchSelectedDestination = (items) => {
         let selectedDestination;
@@ -255,12 +290,12 @@ const ResponderMapScreen = ({
         }
     };
 
-    const createRoute = async () => {
+    const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
         console.log("new coordinates", newCoordinates);
         setIsRoute(true);
         try {
-            let originCoord = `${region.longitude},${region.latitude}`;
-            let destinationCoord = `${newCoordinates.longitude},${newCoordinates.latitude}`;
+            let originCoord = `${myLocationLong},${myLocationLat}`;
+            let destinationCoord = `${destinationLong},${destinationLat}`;
 
             console.log("my location:", originCoord, "Selected destination:", destinationCoord);
 
@@ -290,6 +325,8 @@ const ResponderMapScreen = ({
               { latitude: 14.76911, longitude: 121.03718 },
             ];
            */
+
+            return decodedCoords
 
         } catch (error) {
             console.error(error.message);
@@ -380,6 +417,7 @@ const ResponderMapScreen = ({
         }
     };
 
+    //DirectionAngle for heading, 0 Camera points north. 90: Camera points east. 180: Camera points south. 270: Camera points west.
     const moveCamera = (latitude, longitude) => {
         if (mapRef.current) {
             mapRef.current.animateCamera({
@@ -388,7 +426,7 @@ const ResponderMapScreen = ({
                     longitude: longitude
                 },
                 pitch: 90,
-                heading: 90,   //Need to calculateDirectionAngle, 0 Camera points north. 90: Camera points east. 180: Camera points south. 270: Camera points west.
+                heading: 90,
                 altitude: 20,
                 zoom: 20
             },
@@ -396,6 +434,24 @@ const ResponderMapScreen = ({
             );
         }
     };
+
+    const createRouteForResponderAndUserToDB = async (documentId) => {
+        try {
+            const emergencyRequestRef = doc(db, "emergency-request", documentId);
+            const routeForUserAndResponder = await createRoute(
+                region.latitude,
+                region.longitude,
+                acceptedRequest.latitude,
+                acceptedRequest.longitude
+            )
+            await updateDoc(emergencyRequestRef, {
+                direction: routeForUserAndResponder
+            });
+
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
 
 
     /* Display all the request of users */
@@ -460,7 +516,7 @@ const ResponderMapScreen = ({
             //followsUserLocation
             //showsTraffic
             >
-  
+
                 {details && (
                     <Marker
                         coordinate={region}
@@ -560,13 +616,37 @@ const ResponderMapScreen = ({
                         />
                     </Marker>
                 )}
+
+                {acceptedRequest && acceptedRequest.direction && acceptedRequest.direction.length > 0 && (
+                    <Polyline
+                        coordinates={acceptedRequest.direction}
+                        strokeColor="#7b64ff"
+                        strokeWidth={5}
+                    />
+                )}
             </MapView>
 
+            {acceptedRequest && (
+                <TouchableOpacity
+                    activeOpacity={0.4}
+                    style={[styles.overlayButton, {
+                        position: "absolute",
+                        bottom: 115,
+                        left: 10,
+                        paddingHorizontal: 20,
+                        backgroundColor: defaultTheme,
+                    }]}
+                    onPress={() => createRouteForResponderAndUserToDB(acceptedRequest.id)}
+                >
+                    <Text style={{ color: "white", fontFamily: "NotoSans-SemiBold", }} >Start</Text>
+                </TouchableOpacity>
+            )}
+
             <CustomButton
-                title="Find a person"
+                title="View emergency request"
                 style={[styles.overlayButton, {
                     bottom: 19,
-                    right: 110,
+                    right: 90,
                 }]}
                 textStyle={styles.overlayButtonText}
                 textColor={defaultTheme}
@@ -579,7 +659,7 @@ const ResponderMapScreen = ({
                     bottom: acceptedRequest ? 220 : 165,
                     right: 10,
                     paddingHorizontal: 10,
-                    backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
+                    backgroundColor: listOfHospitals.length <= 0 ? "rgb(240, 240, 240)" : "white"
                 }]}
                 onPress={() => setShowHospitals(true)}
                 disabled={listOfHospitals.length <= 0}
@@ -587,7 +667,7 @@ const ResponderMapScreen = ({
                 <MaterialCommunityIcons
                     name="hospital-box-outline"
                     size={24}
-                    color={listOfHospitals.length <= 0 ? "rgb(179, 179, 179)" : defaultTheme}
+                    color={listOfHospitals.length <= 0 ? "silver" : defaultTheme}
                 />
             </TouchableOpacity>
             <TouchableOpacity
@@ -596,15 +676,20 @@ const ResponderMapScreen = ({
                     bottom: acceptedRequest ? 170 : 115,
                     right: 10,
                     paddingHorizontal: 10,
-                    backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
+                    backgroundColor: !newCoordinates ? "rgb(240, 240, 240)" : "white"
                 }]}
-                onPress={createRoute}
+                onPress={() => createRoute(
+                    region.latitude,
+                    region.longitude,
+                    newCoordinates.latitude,
+                    newCoordinates.longitude
+                )}
                 disabled={!newCoordinates}
             >
                 <FontAwesome5
                     name="route"
                     size={24}
-                    color={!newCoordinates ? "rgb(179, 179, 179)" : defaultTheme}
+                    color={!newCoordinates ? "silver" : defaultTheme}
                 />
             </TouchableOpacity>
             <TouchableOpacity
@@ -901,7 +986,7 @@ const styles = StyleSheet.create({
     },
     overlayContainer: {
         position: 'absolute',
-        bottom: 90, //default  top: 50
+        bottom: 90,
         left: 15,
         backgroundColor: 'white',
         paddingHorizontal: 20,

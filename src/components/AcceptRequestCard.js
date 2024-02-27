@@ -18,7 +18,7 @@ const AcceptRequestCard = ({
     photoUrl,
 }) => {
 
-    const cancelEmergencyRequestFromResponder = async (docId) => {
+    const cancelEmergencyRequest = async (docId) => {
         try {
             const emergencyRequestRef = doc(db, "emergency-request", docId);
 
@@ -26,6 +26,7 @@ const AcceptRequestCard = ({
                 emergencyStatus: "waiting",
                 responderUid: null,
                 responder: null,
+                direction: null
             });
 
             console.log("Cancel request successfully from responder");
@@ -54,7 +55,7 @@ const AcceptRequestCard = ({
                     </View>
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={() => cancelEmergencyRequestFromResponder(documentId)}
+                        onPress={() => cancelEmergencyRequest(documentId)}
                     >
                         <MaterialCommunityIcons name="cancel" size={24} color="red" />
                     </TouchableOpacity>
@@ -71,7 +72,7 @@ const AcceptRequestCard = ({
                     </View>
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={() => cancelEmergencyRequestFromResponder(documentId)}
+                        onPress={() => cancelEmergencyRequest(documentId)}
                     >
                         <MaterialCommunityIcons name="cancel" size={24} color="red" />
                     </TouchableOpacity>

@@ -24,23 +24,26 @@ import MapView, {
   Polyline,
   PROVIDER_GOOGLE
 } from 'react-native-maps';
-import CustomButton from "../../components/CustomButton";
+import { db } from '../../config/firebase';
 import {
   addDoc,
   serverTimestamp,
-  doc,
-  setDoc,
   onSnapshot,
   query,
   where,
   orderBy,
+  doc,
+  getDoc,
+  updateDoc
 } from 'firebase/firestore';
-import { db } from "../../config/firebase";
-import { toast, defaultTheme } from '../../shared/utils';
+import {
+  toast,
+  defaultTheme,
+  updateResponderLocationToDB
+} from '../../shared/utils';
 import {
   AntDesign,
   Ionicons,
-  FontAwesome,
   FontAwesome5,
   MaterialIcons,
   MaterialCommunityIcons,
@@ -62,11 +65,10 @@ const MapScreen = ({
   user,
   setUser,
   accountDetails,
-  userAndResponderDetails,
-  setUserAndResponderDetails }) => {
+}) => {
   const navigation = useNavigation();
-  console.log("Current user", user);
-  console.log("accounts details", accountDetails);
+  //console.log("Current user", user);
+  //console.log("accounts details", accountDetails);
   const [showProfileDetails, setShowProfileDetails] = useState(false);
 
   useLayoutEffect(() => {  //use for UI loads
@@ -107,8 +109,8 @@ const MapScreen = ({
   const [isSaved, setIsSaved] = useState(false);
 
   //Onsnaphot state
-  const [acceptedRequest, setAcceptedRequest] = useState([]);
   const [emergencyRequest, setEmergencyRequest] = useState([]);
+  const [acceptedRequest, setAcceptedRequest] = useState(null);
 
   //emergency profile state
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -147,8 +149,8 @@ const MapScreen = ({
       let address = await Location.reverseGeocodeAsync(location.coords);
       setDetails(address[0]);
       setReportLocation(`${address[0].city}, ${address[0].region} ${address[0].streetNumber} ${address[0].street} ${address[0].district}`)
-      console.log("address", details);
-      console.log('Location state:', location);
+      //console.log("address", details);
+      //console.log('Location state:', location);
       setRegion(prevRegion => (
         {
           ...prevRegion,
@@ -156,10 +158,12 @@ const MapScreen = ({
           longitude: location?.coords.longitude,
         }
       ));
-      console.log("Region state:", region);
 
       const subscription = await Location.watchPositionAsync(
-        { enableHighAccuracy: true, distanceInterval: 5 }, // default 5
+        {
+          enableHighAccuracy: true,
+          distanceInterval: 5
+        },
         (newLocation) => {
           updateLocation(newLocation);
         }
@@ -169,10 +173,10 @@ const MapScreen = ({
       toast(error.message);
     }
   }
-  /* 
-    useEffect(() => {
-      fetchMyLocation();
-    }, []) */
+
+  useEffect(() => {
+    fetchMyLocation();
+  }, [])
 
   const updateLocation = async (location) => {
     let newAddress = await Location.reverseGeocodeAsync(location?.coords);
@@ -189,6 +193,14 @@ const MapScreen = ({
 
     console.log("Watch new position", location);
     console.log("New address", newAddress[0]);
+
+    if (acceptedRequest && (region.latitude !== location.coords.latitude || region.longitude !== location.coords.longitude)) {
+      updateUserLocationToDB(
+        location.coords.latitude,
+        location.coords.longitude,
+        acceptedRequest.id
+      );
+    }
   };
 
   const requestEmergency = async () => {
@@ -261,6 +273,29 @@ const MapScreen = ({
       return coordinates;
     } */
 
+  const updateUserLocationToDB = async (latitude, longitude, documentId) => {
+    try {
+      const emergencyRequestRef = doc(db, "emergency-request", documentId);
+      const docSnapshot = await getDoc(emergencyRequestRef);
+
+      if (docSnapshot.exists()) {
+        const existingData = docSnapshot.data();
+
+        console.log("existingdata", existingData);
+
+        await updateDoc(emergencyRequestRef, {
+          ...existingData,
+          latitude,
+          longitude
+        });
+
+        console.log("Successfully updated the coordinates of user in DB");
+      }
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
   const fetchSelectedDestination = (items) => {
     let selectedDestination;
 
@@ -307,12 +342,12 @@ const MapScreen = ({
     }
   };
 
-  const createRoute = async () => {
+  const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
     console.log("new coordinates", newCoordinates);
     setIsRoute(true);
     try {
-      let originCoord = `${region.longitude},${region.latitude}`;
-      let destinationCoord = `${newCoordinates.longitude},${newCoordinates.latitude}`;
+      let originCoord = `${myLocationLong},${myLocationLat}`;
+      let destinationCoord = `${destinationLong},${destinationLat}`;
 
       console.log("my location:", originCoord, "Selected destination:", destinationCoord);
 
@@ -607,19 +642,32 @@ const MapScreen = ({
             />
           </Marker>
         )}
+
+        {acceptedRequest && acceptedRequest.direction && acceptedRequest.direction.length > 0 && (
+          <Polyline
+            coordinates={acceptedRequest.direction}
+            strokeColor="#7b64ff"
+            strokeWidth={5}
+          />
+        )}
       </MapView>
 
-      <CustomButton
-        title="Request Emergency"
+      <TouchableOpacity
+        activeOpacity={0.5}
         style={[styles.overlayButton, {
           bottom: 19,
           right: 100,
+          backgroundColor: emergencyRequest.length > 0 ? "rgb(240, 240, 240)" : "white"
         }]}
-        textStyle={styles.overlayButtonText}
-        textColor={defaultTheme}
         onPress={() => setShowEmergencyModal(!showEmergencyModal)}
-        statusButton={statusButton}
-      />
+        disabled={emergencyRequest.length > 0}
+      >
+        <Text style={[styles.overlayButtonText, {
+          color: emergencyRequest.length > 0 ? "silver" : defaultTheme
+        }]}
+        >Request Emergency</Text>
+      </TouchableOpacity>
+
 
       <TouchableOpacity
         activeOpacity={0.3}
@@ -627,7 +675,7 @@ const MapScreen = ({
           bottom: acceptedRequest ? 220 : 215,
           right: 10,
           paddingHorizontal: 10,
-          backgroundColor: listOfHospitals.length <= 0 ? "rgb(210, 210, 210)" : "white"
+          backgroundColor: listOfHospitals.length <= 0 ? "rgb(240, 240, 240)" : "white"
         }]}
         onPress={() => setShowHospitals(true)}
         disabled={listOfHospitals.length <= 0}
@@ -635,25 +683,30 @@ const MapScreen = ({
         <MaterialCommunityIcons
           name="hospital-box-outline"
           size={24}
-          color={listOfHospitals.length <= 0 ? "rgb(179, 179, 179)" : defaultTheme}
+          color={listOfHospitals.length <= 0 ? "silver" : defaultTheme}
         />
       </TouchableOpacity>
 
       <TouchableOpacity
         activeOpacity={0.3}
         style={[styles.overlayButton, {
-          bottom: acceptedRequest ? 170  : 165,
+          bottom: acceptedRequest ? 170 : 165,
           right: 10,
           paddingHorizontal: 10,
-          backgroundColor: !newCoordinates ? "rgb(210, 210, 210)" : "white"
+          backgroundColor: !newCoordinates ? "rgb(240, 240, 240)" : "white"
         }]}
-        onPress={createRoute}
+        onPress={() => createRoute(
+          region.latitude,
+          region.longitude,
+          newCoordinates.latitude,
+          newCoordinates.longitude
+        )}
         disabled={!newCoordinates}
       >
         <FontAwesome5
           name="route"
           size={24}
-          color={!newCoordinates ? "rgb(179, 179, 179)" : defaultTheme}
+          color={!newCoordinates ? "silver" : defaultTheme}
         />
       </TouchableOpacity>
 
