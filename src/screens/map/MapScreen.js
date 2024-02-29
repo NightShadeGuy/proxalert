@@ -10,7 +10,8 @@ import {
   TouchableHighlight,
   ScrollView,
   Pressable,
-  Image
+  Image,
+  Alert
 } from 'react-native'
 import React, {
   useState,
@@ -24,7 +25,8 @@ import MapView, {
   Polyline,
   PROVIDER_GOOGLE
 } from 'react-native-maps';
-import { db } from '../../config/firebase';
+import { db, storage } from '../../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   addDoc,
   serverTimestamp,
@@ -38,8 +40,7 @@ import {
 } from 'firebase/firestore';
 import {
   toast,
-  defaultTheme,
-  updateResponderLocationToDB
+  defaultTheme
 } from '../../shared/utils';
 import {
   AntDesign,
@@ -56,6 +57,8 @@ import {
   searchByRadius
 } from '../../shared/api';
 import polyline from '@mapbox/polyline';
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from '@react-navigation/native';
 import { emergencyRequestRef, emergencyTypes } from "../../shared/utils";
 import EmergencyRequestCard from '../../components/EmergencyRequestCard';
@@ -137,6 +140,9 @@ const MapScreen = ({
   const [showHospitals, setShowHospitals] = useState(false);
   const [FindingHospitals, setFindingHospitals] = useState(false);
 
+  const [image, setImage] = useState(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
+
   const fetchMyLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -215,6 +221,7 @@ const MapScreen = ({
           uid: user.uid,
           contactNumber: accountDetails.contactNumber,
           photoUrl: user.photoURL,
+          proofPhotoUrl: image ? await uploadMedia() : null,
           emergencyType: selectEmergencyType,
           emergencyStatus: emergencyStatus,
           createdAt: serverTimestamp(),
@@ -237,6 +244,8 @@ const MapScreen = ({
         setIsSaved(false);
         setModalVisible(false);
         setShowRequestModal(true); // state for emergency request modal
+        setSelectEmergencyType(null);
+        setImage(null);
       }, 1000)
     }
   }
@@ -532,6 +541,61 @@ const MapScreen = ({
   useEffect(() => {
     console.log("Your accepted request", acceptedRequest);
   }, [acceptedRequest]);
+
+
+  const pickMedia = async () => {
+    // Permission request is necessary for accessing the image library
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      alert('Permission to access media library is required!');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1
+    });
+
+    if (!result.canceled) {
+      // Check if assets array is not empty
+      if (result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        setImage(imageUri);
+      } else {
+        // Handle case when assets array is empty
+        console.log('No image selected');
+      }
+    }
+  };
+
+  const uploadMedia = async () => {
+    // Create a reference to the path in Firebase Storage
+    const storageRef = ref(storage, 'images/' + new Date().toISOString());
+
+    // Convert image URI to Blob
+    const response = await fetch(image);
+    const blob = await response.blob();
+
+    try {
+      // Upload blob to Firebase Storage
+      await uploadBytes(storageRef, blob);
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log('Image uploaded:', downloadURL);
+
+      return downloadURL;
+      
+
+      // Handle the uploaded URL as needed (store it in Firestore, etc.)
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      // Handle error
+    }
+  }
 
 
   return (
@@ -1118,9 +1182,17 @@ const MapScreen = ({
                 position: "relative"
               }}
             >
-              <TouchableOpacity style={{ alignItems: "center", paddingVertical: 10 }}>
-                <MaterialCommunityIcons name="upload" size={24} color="gray" />
-                <Text style={{ fontFamily: "NotoSans-Medium", color: defaultTheme, fontSize: 12 }}>Upload photo</Text>
+              <TouchableOpacity style={{ alignItems: "center", paddingVertical: 10 }} onPress={pickMedia}>
+                {!image && (
+                  <>
+                    <MaterialCommunityIcons name="upload" size={24} color="gray" />
+                    <Text style={{ fontFamily: "NotoSans-Medium", color: defaultTheme, fontSize: 12 }}>Upload photo</Text>
+                  </>
+                )}
+
+                {image && (
+                  <Image source={{ uri: image }} style={{ width: 150, height: 70 }} />
+                )}
               </TouchableOpacity>
             </View>
 
