@@ -57,7 +57,6 @@ import {
   searchByRadius
 } from '../../shared/api';
 import polyline from '@mapbox/polyline';
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from '@react-navigation/native';
 import { emergencyRequestRef, emergencyTypes } from "../../shared/utils";
@@ -141,7 +140,6 @@ const MapScreen = ({
   const [FindingHospitals, setFindingHospitals] = useState(false);
 
   const [image, setImage] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
 
   const fetchMyLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -268,20 +266,6 @@ const MapScreen = ({
     }
   };
 
-  /*   const fetchSelectedDestination = (items) => {
-    
-      const selectedDestination = items.filter(marker => marker.osm_id === selectDestination);
-      console.log("Selected destination", selectedDestination[0]);
-      const coordinates = {
-        latitude: parseFloat(selectedDestination[0]?.lat),
-        longitude: parseFloat(selectedDestination[0]?.lon),
-      }
-      setDestination(coordinates);
-      console.log("destination state", destination);
-  
-      return coordinates;
-    } */
-
   const updateUserLocationToDB = async (latitude, longitude, documentId) => {
     try {
       const emergencyRequestRef = doc(db, "emergency-request", documentId);
@@ -305,7 +289,7 @@ const MapScreen = ({
     }
   }
 
-  const fetchSelectedDestination = (items) => {
+  const fetchSelectedDestination = (items, selectDestination) => {
     let selectedDestination;
 
     if (items && items.length > 0) {
@@ -342,13 +326,8 @@ const MapScreen = ({
         console.log("Selected destination", selectedDestination);
         console.log(`Destination state: ${coordinates.latitude}, ${coordinates.longitude}`);
         console.log(`type of my coordinates: ${typeof coordinates.latitude}, ${typeof coordinates.longitude}`);
-
-      } else {
-        console.log("Destination not found for the given selectDestination");
       }
-    } else {
-      console.log("No items provided for fetching destination");
-    }
+    } 
   };
 
   const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
@@ -556,7 +535,7 @@ const MapScreen = ({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       aspect: [4, 3],
-      quality: 1
+      quality: 1,
     });
 
     if (!result.canceled) {
@@ -589,8 +568,6 @@ const MapScreen = ({
 
       return downloadURL;
       
-
-      // Handle the uploaded URL as needed (store it in Firestore, etc.)
     } catch (error) {
       console.error('Error uploading image:', error);
       // Handle error
@@ -860,10 +837,12 @@ const MapScreen = ({
           keyExtractor={item => item.osm_id}
           renderItem={({ item, index }) => (
             <TouchableOpacity
-              style={styles.listData}
+              style={[styles.listData, {
+                backgroundColor: item.osm_id === selectDestination ? "rgb(240, 240, 240)" : "white"
+              }]}
               onPress={() => {
                 setSelectDestination(item.osm_id);
-                fetchSelectedDestination(autoComplete);
+                fetchSelectedDestination(autoComplete, item.osm_id);
                 moveToRegion(
                   parseFloat(item.lat),
                   parseFloat(item.lon),
@@ -944,13 +923,13 @@ const MapScreen = ({
                 <TouchableOpacity
                   style={[styles.listData, {
                     backgroundColor: item.properties.datasource.raw.osm_id === selectDestination
-                      ? "rgba(125, 205, 235, 0.3)"
+                      ? "#d9d9d9"
                       : "transparent"
                   }]}
                   onPress={() => {
                     setSelectDestination(item.properties.datasource.raw.osm_id);
                     setShowHospitals(!showHospitals);
-                    fetchSelectedDestination(listOfHospitals);
+                    fetchSelectedDestination(listOfHospitals, item.properties.datasource.raw.osm_id);
                     moveToRegion(
                       parseFloat(item.properties.lat),
                       parseFloat(item.properties.lon),

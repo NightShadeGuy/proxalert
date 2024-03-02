@@ -244,7 +244,7 @@ const ResponderMapScreen = ({
         }
     }
 
-    const fetchSelectedDestination = (items) => {
+    const fetchSelectedDestination = (items, selectDestination) => {
         let selectedDestination;
 
         if (items && items.length > 0) {
@@ -281,17 +281,11 @@ const ResponderMapScreen = ({
                 console.log("Selected destination", selectedDestination);
                 console.log(`Destination state: ${coordinates.latitude}, ${coordinates.longitude}`);
                 console.log(`type of my coordinates: ${typeof coordinates.latitude}, ${typeof coordinates.longitude}`);
-
-            } else {
-                console.log("Destination not found for the given selectDestination");
             }
-        } else {
-            console.log("No items provided for fetching destination");
         }
     };
 
     const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
-        console.log("new coordinates", newCoordinates);
         setIsRoute(true);
         try {
             let originCoord = `${myLocationLong},${myLocationLat}`;
@@ -763,10 +757,12 @@ const ResponderMapScreen = ({
                     keyExtractor={item => item.osm_id}
                     renderItem={({ item, index }) => (
                         <TouchableOpacity
-                            style={styles.listData}
+                            style={[styles.listData, {
+                                backgroundColor: item.osm_id === selectDestination ? "rgb(240, 240, 240)" : "white"
+                            }]}
                             onPress={() => {
                                 setSelectDestination(item.osm_id);
-                                fetchSelectedDestination(autoComplete);
+                                fetchSelectedDestination(autoComplete, item.osm_id);
                                 moveToRegion(
                                     parseFloat(item.lat),
                                     parseFloat(item.lon),
@@ -859,13 +855,13 @@ const ResponderMapScreen = ({
                                 <TouchableOpacity
                                     style={[styles.listData, {
                                         backgroundColor: item.properties.datasource.raw.osm_id === selectDestination
-                                            ? "rgba(125, 205, 235, 0.3)"
+                                            ? "#d9d9d9"
                                             : "transparent"
                                     }]}
                                     onPress={() => {
                                         setSelectDestination(item.properties.datasource.raw.osm_id);
                                         setShowHospitals(!showHospitals);
-                                        fetchSelectedDestination(listOfHospitals);
+                                        fetchSelectedDestination(listOfHospitals, item.properties.datasource.raw.osm_id);
                                         moveToRegion(
                                             parseFloat(item.properties.lat),
                                             parseFloat(item.properties.lon),
@@ -945,6 +941,7 @@ const ResponderMapScreen = ({
                     latitude={acceptedRequest.latitude}
                     longitude={acceptedRequest.longitude}
                     moveToRegion={moveToRegion}
+                    moveCamera={moveCamera}
                     documentId={acceptedRequest.id}
                     photoUrl={acceptedRequest.photoUrl}
                 />

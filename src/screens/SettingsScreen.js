@@ -1,23 +1,25 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  Dimensions,
   ScrollView,
   Pressable,
   TextInput,
   TouchableOpacity,
+  Image,
+  ToastAndroid
 } from 'react-native';
-import { updateProfile, updatePassword } from "firebase/auth";
-import { AntDesign } from '@expo/vector-icons';
-import { StatusBar } from 'react-native';
-import { toast } from "../shared/utils";
+import { updateProfile, updatePassword, signOut } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore"
+import { db, auth } from '../config/firebase';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
+import { defaultTheme, toast } from "../shared/utils";
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const SettingsScreen = ({ user, setUser }) => {
+const SettingsScreen = ({ user, setUser, accountDetails }) => {
   const {
     container,
-    headerText,
     defaultText,
     font,
     section,
@@ -26,16 +28,51 @@ const SettingsScreen = ({ user, setUser }) => {
     button,
     buttonText
   } = styles;
+  const navigation = useNavigation();
+  const { params: { profilePicture } } = useRoute();
+  console.log("Settings Screen", accountDetails);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerTitleStyle: {
+        fontFamily: "NotoSans-Bold",
+      },
+      headerStyle: {
+        backgroundColor: defaultTheme,
+      },
+      headerTintColor: "white",
+      headerTitleAlign: "center",
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{ marginLeft: 10 }}
+          onPress={() => navigation.navigate("Main")}
+        >
+          <MaterialIcons name="arrow-back" size={20} color="white" />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ flexDirection: "row", alignItems: "center", columnGap: 5 }}
+          onPress={logout}
+        >
+          <MaterialIcons name="logout" size={20} color="white" />
+          <Text style={[font, { color: "white" }]}>Logout</Text>
+        </TouchableOpacity>
+      )
+    })
+  }, [])
+
   const [showInfo, setShowInfo] = useState(false);
   const [showChangePass, setShowChangePass] = useState(false);
 
   const [username, setUsername] = useState(user?.displayName);
   const [photoUrl, setPhotoUrl] = useState(user?.photoURL);
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber);
+  const [phoneNumber, setPhoneNumber] = useState(accountDetails?.contactNumber);
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  console.log(newPassword, confirmNewPassword);
+  console.log(username, phoneNumber);
 
   const updateUserInfo = async () => {
     try {
@@ -43,19 +80,56 @@ const SettingsScreen = ({ user, setUser }) => {
         displayName: username,
         photoURL: photoUrl
       });
+      toast("Successfully update user info");
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  const updateAccountInfoToDb = async (id, username, phoneNumber) => {
+    try {
+      const emergencyRequestRef = doc(db, "accounts", id);
+
+      await updateDoc(emergencyRequestRef, {
+        user: username,
+        contactNumber: phoneNumber
+      }, { merge: true });
+      toast("Successfully update account to DB");
+
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+
+  const handleUpdate = async (id) => {
+    try {
+      console.log("Before updateUserInfo - username:", username, "phoneNumber:", phoneNumber);
+      await updateUserInfo(); // Wait for updateUserInfo to complete
+      console.log("After updateUserInfo - username:", username, "phoneNumber:", phoneNumber);
+
+       if (username !== undefined && phoneNumber !== undefined) {
+        console.log("Calling updateAccountInfoToDb with username:", username, "phoneNumber:", phoneNumber);
+        updateAccountInfoToDb(id, username, phoneNumber);
+      } 
+
       setShowInfo(!showInfo);
-      toast("Successfully updated");
-    } catch (err) {
-      console.error(err.message);
+      //toast("Successfully updated");
+    } catch (error) {
+      console.error(error.message);
     }
   }
 
   const changePassword = async () => {
     try {
-      if (newPassword === confirmNewPassword && newPassword.length >= 8) {
-        updatePassword(user, newPassword);
-        setShowChangePass(!showChangePass);
-        toast("Successfully updated");
+      if (newPassword === confirmNewPassword) {
+        if (newPassword.length >= 8) {
+          updatePassword(user, newPassword);
+          setShowChangePass(!showChangePass);
+          toast("Successfully updated");
+        } else {
+          toast("There must be at least 8 characters in your password.");
+        }
       } else {
         toast("Your new password and confirm password doesn't match.");
       }
@@ -64,18 +138,40 @@ const SettingsScreen = ({ user, setUser }) => {
     }
   }
 
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      navigation.navigate("Get Started");
+    } catch (err) {
+      ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
+    }
+  }
+
   return (
     <View style={container}>
-      <ScrollView>
-        <View>
-          <Text style={[headerText, font]}>SETTINGS</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View
+          style={{
+            position: "relative",
+            height: 100,
+            backgroundColor: defaultTheme,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={{ uri: profilePicture }}
+            style={styles.image}
+          />
         </View>
+
+        <Text style={styles.headerTitle}>{accountDetails?.user}</Text>
+        <Text style={[font, { textAlign: "center" }]}>{accountDetails?.contactNumber}</Text>
+
+
         <View style={section}>
-          <Text
-            style={[font, { fontSize: 18, color: "white" }]}
-          >
-            ACCOUNT
-          </Text>
           <Pressable
             style={sameRow}
             onPress={() => {
@@ -97,6 +193,7 @@ const SettingsScreen = ({ user, setUser }) => {
             />
           </Pressable>
 
+
           {/* Display Personal Info */}
           {showInfo && (
             <View>
@@ -105,7 +202,7 @@ const SettingsScreen = ({ user, setUser }) => {
                   Email
                 </Text>
                 <TextInput
-                   style={[input, font]}
+                  style={[input, font]}
                   placeholder="Email..."
                   value={user.email}
                 />
@@ -151,7 +248,7 @@ const SettingsScreen = ({ user, setUser }) => {
               <TouchableOpacity
                 activeOpacity={0.6}
                 style={button}
-                onPress={updateUserInfo}
+                onPress={() => handleUpdate(accountDetails?.id)}
               >
                 <Text style={[buttonText, font]}>Save</Text>
               </TouchableOpacity>
@@ -214,7 +311,7 @@ const SettingsScreen = ({ user, setUser }) => {
               </TouchableOpacity>
             </View>
           )}
-          
+
         </View>
       </ScrollView>
     </View>
@@ -224,14 +321,9 @@ const SettingsScreen = ({ user, setUser }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  headerText: {
-    color: "#D64045",
-    fontSize: 24,
-    marginTop: StatusBar.currentHeight + 40,
-    marginBottom: 20
+    //justifyContent: "center",
+    //alignItems: "center",
+    backgroundColor: "white"
   },
   defaultText: {
     fontSize: 12,
@@ -240,23 +332,34 @@ const styles = StyleSheet.create({
   font: {
     fontFamily: "NotoSans-SemiBold"
   },
+  headerTitle: {
+    color: defaultTheme,
+    fontSize: 24,
+    fontFamily: "NotoSans-Bold",
+    textAlign: "center",
+    marginTop: 30
+  },
+  image: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginTop: 90,
+    borderWidth: 5,
+    borderColor: "white"
+  },
   section: {
     backgroundColor: "#D64045",
-    width: Dimensions.get("window").width - 50,
+    width: "90%",
     padding: 15,
-    borderRadius: 20,
+    borderRadius: 10,
     marginBottom: 20,
+    marginVertical: 20,
+    marginHorizontal: 20
   },
   sameRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 10
-  },
-
-  image: {
-    width: 40,
-    height: 40,
-    borderRadius: 20
   },
   input: {
     padding: 4,

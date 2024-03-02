@@ -14,6 +14,7 @@ const AcceptRequestCard = ({
     latitude,
     longitude,
     moveToRegion,
+    moveCamera,
     documentId,
     photoUrl,
 }) => {
@@ -40,7 +41,7 @@ const AcceptRequestCard = ({
         <TouchableOpacity
             activeOpacity={0.9}
             style={styles.overlayContainer}
-            onPress={() => moveToRegion(latitude, longitude, 0.0922, 0.0421)}
+            onPress={() => moveCamera(latitude, longitude, 0.0922, 0.0421)}
         >
             {accountDetails.isResponder ? (
                 <View style={styles.row}>

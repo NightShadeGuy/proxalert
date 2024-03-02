@@ -3,13 +3,11 @@ import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import InboxScreen from "../screens/inbox/InboxScreen";
-import ContactScreen from "../screens/ContactScreen";
 import HotlineScreen from "../screens/HotlineScreen";
 import {
     MaterialIcons,
     Ionicons,
     FontAwesome,
-    FontAwesome5,
 } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
@@ -61,18 +59,6 @@ const BottomTabs = ({ user, setUser }) => {
                         < Ionicons
                             name="call"
                             size={24}
-                            color={focused ? "#EB5757" : "#828282"}
-                        />
-                }}
-            />
-            <Tab.Screen
-                name="Contact"
-                component={ContactScreen}
-                options={{
-                    tabBarIcon: ({ focused }) =>
-                        <FontAwesome5
-                            name="user-alt"
-                            size={22}
                             color={focused ? "#EB5757" : "#828282"}
                         />
                 }}

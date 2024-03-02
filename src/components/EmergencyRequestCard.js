@@ -124,7 +124,7 @@ const EmergencyRequestCard = ({
                                     <View>
                                         <View style={styles.row}>
                                             <Text style={styles.text}> Name: {item.user} </Text>
-                                            <Text style={styles.text}>{calendarFormat(item.createdAt.nanoseconds, item.createdAt.seconds)}</Text>
+                                            <Text style={styles.text}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
                                         </View>
                                         <Text style={styles.text}>Contact number: {item.contactNumber}</Text>
                                         <Text style={styles.text}>Emergency type: {item.emergencyType}</Text>

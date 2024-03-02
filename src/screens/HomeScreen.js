@@ -1,24 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, {  useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  ToastAndroid,
   Image,
   Pressable,
   Animated,
   TouchableOpacity,
 } from 'react-native';
-import { auth } from "../config/firebase";
-import { signOut } from "firebase/auth";
-import CustomButton from '../components/CustomButton';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import { loadFonts } from "../shared/utils";
 
 const HomeScreen = ({ user, setUser }) => {
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(false);
   const [fontsLoaded] = loadFonts();
 
   const {
@@ -33,17 +28,6 @@ const HomeScreen = ({ user, setUser }) => {
     font,
     textSection,
   } = styles;
-
-  const logout = async () => {
-    setLoading(true);
-    try {
-      await signOut(auth);
-      setUser(null);
-      navigation.navigate("Get Started");
-    } catch (err) {
-      ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
-    }
-  }
 
   const scaleValue = useRef(new Animated.Value(1)).current;
 
@@ -85,8 +69,10 @@ const HomeScreen = ({ user, setUser }) => {
           </Text>
           {user.photoURL ? (
             <TouchableOpacity
-              style={styles.profile}
-              onPress={() => navigation.navigate("Settings")}
+              style={profile}
+              onPress={() => navigation.navigate("Settings", {
+                 profilePicture: user.photoURL,
+              })}
             >
               <Image
                 source={{ uri: user.photoURL }}
@@ -154,15 +140,7 @@ const HomeScreen = ({ user, setUser }) => {
         </View>
       </View>
 
-      {/* Temporary button to sign out */}
-      <CustomButton
-        title="Logout"
-        style={button}
-        textStyle={text}
-        textColor="white"
-        loading={loading}
-        onPress={logout}
-      />
+
     </View>
   )
 }
@@ -172,7 +150,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     rowGap: 100,
     backgroundColor: "white"
@@ -180,6 +158,7 @@ const styles = StyleSheet.create({
   section: {
     width: "100%",
     paddingHorizontal: 20,
+    marginTop: 60
   },
   headerColor: {
     color: "#333"
@@ -223,9 +202,9 @@ const styles = StyleSheet.create({
     marginTop: 10
   },
   image: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 250,
+    height: 250,
+    borderRadius: 150,
     padding: 50
   }
 })

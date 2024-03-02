@@ -95,7 +95,13 @@ const StackNavigator = () => {
           {() => <LoginScreen user={user} setUser={setUser} />}
         </Stack.Screen>
         <Stack.Screen name="Settings">
-          {() => <SettingsScreen user={user} setUser={setUser} />}
+          {() =>
+            <SettingsScreen
+              user={user}
+              setUser={setUser}
+              accountDetails={accountDetails}
+            />
+          }
         </Stack.Screen>
         <Stack.Screen
           name="Inbox-details"
