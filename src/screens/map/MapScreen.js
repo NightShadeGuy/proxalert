@@ -40,7 +40,8 @@ import {
 } from 'firebase/firestore';
 import {
   toast,
-  defaultTheme
+  defaultTheme,
+  showToast
 } from '../../shared/utils';
 import {
   AntDesign,
@@ -62,6 +63,7 @@ import { useNavigation } from '@react-navigation/native';
 import { emergencyRequestRef, emergencyTypes } from "../../shared/utils";
 import EmergencyRequestCard from '../../components/EmergencyRequestCard';
 import AcceptRequestCard from '../../components/AcceptRequestCard';
+import CompletedRequestModal from '../../components/CompletedRequestModal';
 
 const MapScreen = ({
   user,
@@ -113,6 +115,8 @@ const MapScreen = ({
   //Onsnaphot state
   const [emergencyRequest, setEmergencyRequest] = useState([]);
   const [acceptedRequest, setAcceptedRequest] = useState(null);
+
+  const [completedRequestShowModal, setCompletedRequestShowModal] = useState(false);
 
   //emergency profile state
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -226,11 +230,13 @@ const MapScreen = ({
           latitude: region.latitude,
           longitude: region.longitude,
           fullAddress: reportLocation,
-          address: { ...details }
+          address: { ...details },
+          showCompletedModal: false
         });
 
         console.log("Document written:", docRef.id);
         setIsSaved(true);
+        setShowRequestModal(true); // state for emergency request modal
       } else {
         toast("You need select your emergency type and your location");
       }
@@ -241,7 +247,6 @@ const MapScreen = ({
       setTimeout(() => {
         setIsSaved(false);
         setModalVisible(false);
-        setShowRequestModal(true); // state for emergency request modal
         setSelectEmergencyType(null);
         setImage(null);
       }, 1000)
@@ -327,7 +332,7 @@ const MapScreen = ({
         console.log(`Destination state: ${coordinates.latitude}, ${coordinates.longitude}`);
         console.log(`type of my coordinates: ${typeof coordinates.latitude}, ${typeof coordinates.longitude}`);
       }
-    } 
+    }
   };
 
   const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
@@ -567,7 +572,7 @@ const MapScreen = ({
       console.log('Image uploaded:', downloadURL);
 
       return downloadURL;
-      
+
     } catch (error) {
       console.error('Error uploading image:', error);
       // Handle error
@@ -911,11 +916,11 @@ const MapScreen = ({
             height: "50%",
             bottom: 0,
             width: "100%",
-            borderTopWidth: 5,
-            borderColor: { defaultTheme },
           }}
           >
-
+            <Text style={[styles.headerHospital, styles.headerTitle]}>
+              List of Hospital base on your Location
+            </Text>
             <FlatList
               data={listOfHospitals}
               keyExtractor={item => item.properties.datasource.raw.osm_id}
@@ -923,7 +928,7 @@ const MapScreen = ({
                 <TouchableOpacity
                   style={[styles.listData, {
                     backgroundColor: item.properties.datasource.raw.osm_id === selectDestination
-                      ? "#d9d9d9"
+                      ? "#ffecb3"
                       : "transparent"
                   }]}
                   onPress={() => {
@@ -949,11 +954,6 @@ const MapScreen = ({
                   </View>
                 </TouchableOpacity>
               )}
-              ListHeaderComponent={() => (
-                <Text style={[styles.headerHospital, styles.headerTitle]}>
-                  List of Hospital base on your Location
-                </Text>
-              )}
               ItemSeparatorComponent={() => (
                 <View style={{ borderWidth: 1, borderColor: "gray" }}></View>
               )}
@@ -962,21 +962,25 @@ const MapScreen = ({
         </Pressable>
       </Modal>
 
-      {FindingHospitals && (
-        <StatusModal
-          status={FindingHospitals}
-          setStatus={setFindingHospitals}
-          message="We're looking a hospitals"
-        />
-      )}
+      {
+        FindingHospitals && (
+          <StatusModal
+            status={FindingHospitals}
+            setStatus={setFindingHospitals}
+            message="We're looking a hospitals"
+          />
+        )
+      }
 
-      {isRoute && (
-        <StatusModal
-          status={isRoute}
-          setStatus={setIsRoute}
-          message="Creating a route..."
-        />
-      )}
+      {
+        isRoute && (
+          <StatusModal
+            status={isRoute}
+            setStatus={setIsRoute}
+            message="Creating a route..."
+          />
+        )
+      }
 
 
       <Modal
@@ -1215,8 +1219,20 @@ const MapScreen = ({
           latitude={acceptedRequest.responder.latitude}
           longitude={acceptedRequest.responder.longitude}
           moveToRegion={moveToRegion}
+          moveCamera={moveCamera}
           documentId={acceptedRequest.id}
           photoUrl={acceptedRequest.responder.photoUrl}
+        />
+      )}
+
+      {acceptedRequest && acceptedRequest.responder && acceptedRequest.responder.name && (
+        <CompletedRequestModal
+          showModal={acceptedRequest.showCompletedModal}
+          setShowModal={setCompletedRequestShowModal}
+          name={acceptedRequest.responder.name}
+          photoUrl={acceptedRequest.responder.photoUrl}
+          documentId={acceptedRequest.id}
+          accountDetails={accountDetails}
         />
       )}
 
@@ -1304,8 +1320,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     textAlign: "center",
     fontSize: 16,
-    paddingTop: 3,
-    paddingBottom: 6,
+    paddingVertical: 10,
     backgroundColor: defaultTheme,
     color: "white",
   },

@@ -8,7 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  ToastAndroid
+  ToastAndroid,
 } from 'react-native';
 import { updateProfile, updatePassword, signOut } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore"
@@ -16,6 +16,7 @@ import { db, auth } from '../config/firebase';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { defaultTheme, toast } from "../shared/utils";
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { showToast } from '../shared/utils';
 
 const SettingsScreen = ({ user, setUser, accountDetails }) => {
   const {
@@ -80,7 +81,7 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
         displayName: username,
         photoURL: photoUrl
       });
-      toast("Successfully update user info");
+      showToast("Successfully update user info")
     } catch (error) {
       console.error(error.message);
     }
@@ -94,8 +95,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
         user: username,
         contactNumber: phoneNumber
       }, { merge: true });
-      toast("Successfully update account to DB");
-
     } catch (error) {
       console.error(error.message);
     }
@@ -104,17 +103,15 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
 
   const handleUpdate = async (id) => {
     try {
-      console.log("Before updateUserInfo - username:", username, "phoneNumber:", phoneNumber);
       await updateUserInfo(); // Wait for updateUserInfo to complete
-      console.log("After updateUserInfo - username:", username, "phoneNumber:", phoneNumber);
 
-       if (username !== undefined && phoneNumber !== undefined) {
-        console.log("Calling updateAccountInfoToDb with username:", username, "phoneNumber:", phoneNumber);
+      if (username !== undefined && phoneNumber !== undefined) {
         updateAccountInfoToDb(id, username, phoneNumber);
-      } 
+      }
 
       setShowInfo(!showInfo);
-      //toast("Successfully updated");
+      //toast("Updated successfully");
+      showToast("Updated successfully");
     } catch (error) {
       console.error(error.message);
     }
@@ -126,12 +123,12 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
         if (newPassword.length >= 8) {
           updatePassword(user, newPassword);
           setShowChangePass(!showChangePass);
-          toast("Successfully updated");
+          showToast("Updated successfully");
         } else {
-          toast("There must be at least 8 characters in your password.");
+          showToast("", "There must be at least 8 characters in your password.", "error");
         }
       } else {
-        toast("Your new password and confirm password doesn't match.");
+        showToast("", "Your new password and confirm password doesn't match", "error");
       }
     } catch (err) {
       toast(err.message);
@@ -169,7 +166,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
 
         <Text style={styles.headerTitle}>{accountDetails?.user}</Text>
         <Text style={[font, { textAlign: "center" }]}>{accountDetails?.contactNumber}</Text>
-
 
         <View style={section}>
           <Pressable

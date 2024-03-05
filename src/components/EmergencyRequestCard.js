@@ -112,9 +112,33 @@ const EmergencyRequestCard = ({
                         alignItems: 'center',
                         backgroundColor: "rgba(0, 0, 0, 0.3)",
                     }}
-                    onPress={() => setShowRequestModal(!showRequestModal)}
                 >
-                    <View style={styles.container}>
+                    <View style={[styles.container, {
+                        height: accountDetails.isResponder ? "55%" : "",
+                    }]}>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                paddingVertical: 10,
+                                borderBottomWidth: 1,
+                                borderColor: "silver",
+                                paddingHorizontal: 20
+                            }}
+                        >
+                            <Text style={{
+                                fontFamily: "NotoSans-Bold",
+                                fontSize: 17,
+                                color: defaultTheme
+                            }}>{title}</Text>
+                            <TouchableOpacity
+                                activeOpacity={0.2}
+                                onPress={() => setShowRequestModal(!showRequestModal)}
+                            >
+                                <Feather name="x" size={30} color="black" />
+                            </TouchableOpacity>
+                        </View>
                         <FlatList
                             data={emergencyRequest}
                             showsVerticalScrollIndicator={false}
@@ -245,28 +269,8 @@ const EmergencyRequestCard = ({
                                     )}
                                 </View>
                             )}
-                            ListHeaderComponent={() => (
-                                <View
-                                    style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        paddingTop: 10,
-                                        paddingHorizontal: 20
-                                    }}
-                                >
-                                    <Text style={{
-                                        fontFamily: "NotoSans-Bold",
-                                        fontSize: 17,
-                                        color: defaultTheme
-                                    }}>{title}</Text>
-                                    <TouchableOpacity
-                                        activeOpacity={0.2}
-                                        onPress={() => setShowRequestModal(!showRequestModal)}
-                                    >
-                                        <Feather name="x" size={30} color="black" />
-                                    </TouchableOpacity>
-                                </View>
+                            ItemSeparatorComponent={() => (
+                                <View style={{ borderBottomWidth: 1, borderColor: "silver" }}></View>
                             )}
                             ListEmptyComponent={() => (
                                 <View style={styles.emptyContainer}>
@@ -277,6 +281,7 @@ const EmergencyRequestCard = ({
                                     <Text style={styles.text}>{emptyTitle}</Text>
                                 </View>
                             )}
+                            
                         />
                     </View>
                 </View>
@@ -293,7 +298,6 @@ const styles = StyleSheet.create({
     container: {
         position: "absolute",
         bottom: 0,
-        height: "55%",
         width: "100%",
         justifyContent: "center",
         backgroundColor: "white",

@@ -8,7 +8,8 @@ import {
     TouchableOpacity,
     TouchableHighlight,
     ScrollView,
-    Image
+    Image,
+    Pressable
 } from 'react-native'
 import React, {
     useState,
@@ -55,6 +56,7 @@ import polyline from '@mapbox/polyline';
 import { useNavigation } from '@react-navigation/native';
 import EmergencyRequestCard from '../../components/EmergencyRequestCard';
 import AcceptRequestCard from '../../components/AcceptRequestCard';
+import CompletedRequestModal from '../../components/CompletedRequestModal';
 
 const ResponderMapScreen = ({
     user,
@@ -103,6 +105,8 @@ const ResponderMapScreen = ({
     //Onsnapshot state
     const [emergencyRequest, setEmergencyRequest] = useState([]);
     const [acceptedRequest, setAcceptedRequest] = useState(null);
+
+    const [completedRequestShowModal, setCompletedRequestShowModal] = useState(false);
 
     //Autocomplete search state
     const [search, setSearch] = useState("");
@@ -424,7 +428,7 @@ const ResponderMapScreen = ({
                 altitude: 20,
                 zoom: 20
             },
-                1000  //duration
+                3000  //duration
             );
         }
     };
@@ -441,6 +445,8 @@ const ResponderMapScreen = ({
             await updateDoc(emergencyRequestRef, {
                 direction: routeForUserAndResponder
             });
+
+            moveCamera(region.latitude, region.longitude)
 
         } catch (error) {
             console.error(error.message);
@@ -620,14 +626,14 @@ const ResponderMapScreen = ({
                 )}
             </MapView>
 
-            {acceptedRequest && (
+            {acceptedRequest && !acceptedRequest.direction && (
                 <TouchableOpacity
                     activeOpacity={0.4}
                     style={[styles.overlayButton, {
                         position: "absolute",
-                        bottom: 115,
+                        bottom: 120,
                         left: 10,
-                        paddingHorizontal: 20,
+                        paddingHorizontal: 30,
                         backgroundColor: defaultTheme,
                     }]}
                     onPress={() => createRouteForResponderAndUserToDB(acceptedRequest.id)}
@@ -817,37 +823,26 @@ const ResponderMapScreen = ({
                 visible={showHospitals}
                 onRequestClose={() => setShowHospitals(!showHospitals)}
             >
-                <View style={{
-                    flex: 1,
-                    alignItems: 'center',
-                    backgroundColor: "rgba(0, 0, 0, 0.2)"
-                }}>
-                    <View style={{
-                        backgroundColor: "white",
-                        position: "absolute",
-                        height: "50%",
-                        bottom: 0,
-                        width: "100%",
-                        borderTopWidth: 5,
-                        borderColor: defaultTheme,
-                    }}>
-                        <FontAwesome
-                            name="arrow-down"
-                            size={19}
-                            color="white"
-                            style={{
-                                position: "absolute",
-                                top: -40,
-                                left: 110,
-                                backgroundColor: { defaultTheme },
-                                paddingHorizontal: 50,
-                                paddingVertical: 10,
-                                height: 40,
-                                borderTopLeftRadius: 100,
-                                borderTopRightRadius: 100
-                            }}
-                            onPress={() => setShowHospitals(!showHospitals)}
-                        />
+                <Pressable
+                    style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        backgroundColor: "rgba(0, 0, 0, 0.2)"
+                    }}
+                    onPress={() => setShowHospitals(!showHospitals)}
+                >
+                    <View
+                        style={{
+                            backgroundColor: "white",
+                            position: "absolute",
+                            height: "50%",
+                            bottom: 0,
+                            width: "100%"
+                        }}
+                    >
+                        <Text style={[styles.headerHospital, styles.headerTitle]}>
+                            List of Hospital base on your Location
+                        </Text>
                         <FlatList
                             data={listOfHospitals}
                             keyExtractor={item => item.properties.datasource.raw.osm_id}
@@ -855,7 +850,7 @@ const ResponderMapScreen = ({
                                 <TouchableOpacity
                                     style={[styles.listData, {
                                         backgroundColor: item.properties.datasource.raw.osm_id === selectDestination
-                                            ? "#d9d9d9"
+                                            ? "#ffecb3"
                                             : "transparent"
                                     }]}
                                     onPress={() => {
@@ -884,20 +879,13 @@ const ResponderMapScreen = ({
                                     </View>
                                 </TouchableOpacity>
                             )}
-                            ListHeaderComponent={() => (
-                                <Text
-                                    style={[styles.headerHospital, styles.headerTitle]}
-                                >
-                                    List of Hospital base on your Location
-                                </Text>
-                            )}
                             ItemSeparatorComponent={() => (
                                 <View style={{ borderWidth: 1, borderColor: "gray" }}></View>
                             )}
                         />
                     </View>
 
-                </View>
+                </Pressable>
             </Modal >
 
 
@@ -944,10 +932,22 @@ const ResponderMapScreen = ({
                     moveCamera={moveCamera}
                     documentId={acceptedRequest.id}
                     photoUrl={acceptedRequest.photoUrl}
+                    setCompletedRequestShowModal={setCompletedRequestShowModal}
                 />
             )}
 
+            {acceptedRequest && (
+                <CompletedRequestModal
+                    showModal={completedRequestShowModal}
+                    setShowModal={setCompletedRequestShowModal}
+                    name={acceptedRequest.user}
+                    photoUrl={acceptedRequest.photoUrl}
+                    documentId={acceptedRequest.id}
+                    accountDetails={accountDetails}
+                />
+            )}
         </View >
+
     )
 }
 
@@ -1031,8 +1031,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         textAlign: "center",
         fontSize: 16,
-        paddingTop: 3,
-        paddingBottom: 6,
+        paddingVertical: 10,
         backgroundColor: defaultTheme,
         color: "white",
     },

@@ -1,4 +1,4 @@
-import React, {  useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -71,7 +71,7 @@ const HomeScreen = ({ user, setUser }) => {
             <TouchableOpacity
               style={profile}
               onPress={() => navigation.navigate("Settings", {
-                 profilePicture: user.photoURL,
+                profilePicture: user.photoURL,
               })}
             >
               <Image
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
       width: 5,
       height: 2,
     },
-    shadowOpacity: 1, 
+    shadowOpacity: 1,
     shadowRadius: 20,
     elevation: 20,
   },

@@ -20,22 +20,34 @@ import moment from "moment";
 import { useNavigation } from "@react-navigation/native";
 import { emergencyRequestRef } from "../../shared/utils";
 
-const InboxScreen = () => {
+const InboxScreen = ({ user, accountDetails }) => {
     const navigation = useNavigation();
     const [listData, setListData] = useState([]);
+
+
     console.log(listData);
+    console.log(accountDetails);
 
     //This will fetch list of saved user location
     const loadAllRequestSaved = async () => {
+
+
         try {
             const userId = auth.currentUser.uid;
 
-            // Get the generated location only for the person that is currently logged in.
-            const q = query(emergencyRequestRef, where("uid", "==", userId), orderBy("createdAt", "desc"));
+            const conditionalQuery = accountDetails.isResponder
+                ? query(emergencyRequestRef,
+                    where("responderUid", "==", userId),
+                    where("emergencyStatus", "==", "completed"),
+                    orderBy("createdAt", "desc"))
+                : query(emergencyRequestRef,
+                    where("uid", "==", userId),
+                    where("emergencyStatus", "==", "completed"),
+                    orderBy("createdAt", "desc"));
 
-            onSnapshot(q, (querySnapshot) => {
+            onSnapshot(conditionalQuery, (querySnapshot) => {
                 setListData(querySnapshot.docs.map(doc => (
-                    {...doc.data(), id: doc.id}    //created a new object to include the document id
+                    { ...doc.data(), id: doc.id }    //created a new object to include the document id
                 )));
                 console.log("query-snapshot", listData);
             })
@@ -62,7 +74,7 @@ const InboxScreen = () => {
     }
 
     return (
-        <View style={{backgroundColor: "white", flex: 1 }}>
+        <View style={{ backgroundColor: "white", flex: 1 }}>
             <Text style={styles.headerTitle}>Other Messages</Text>
             <FlatList
                 data={listData}
@@ -73,10 +85,16 @@ const InboxScreen = () => {
                             underlayColor="#DDDDDD"
                             style={styles.container}
                             onPress={() => navigation.navigate("Inbox-details", {
-                                user: item.user,
+                                name: item.user,
                                 id: item.id,
                                 address: item.address,
                                 createdAt: item.createdAt,
+                                emergencyType: item.emergencyType,
+                                latitude: item.latitude,
+                                longitude: item.longitude,
+                                photoUrl: item.photoUrl,
+                                proofPhotoUrl: item.proofPhotoUrl,
+                                responder: { ...item.responder },
                             })}
                         >
                             <View>
@@ -86,13 +104,18 @@ const InboxScreen = () => {
                                         size={18}
                                         color="#828282"
                                     />
-                                    <Text style={styles.text}>You request to send your location</Text>
+                                    <Text style={styles.text}>
+                                        {accountDetails.isResponder
+                                            ? `My emergency response for ${item.user}`
+                                            : `Congratulations!, Responder ${item.responder.name} completed your request`.slice(0, 30) + "..."
+                                        }
+                                    </Text>
                                     <Text style={[styles.text, { color: "gray" }]}>
                                         {calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}
                                     </Text>
                                 </View>
                                 <Text style={[styles.text, { color: "gray", marginLeft: 35 }]}>
-                                    {item.address.streetNumber} {item.address.street}
+                                    {item.fullAddress}
                                 </Text>
                             </View>
                         </TouchableHighlight>
@@ -101,8 +124,8 @@ const InboxScreen = () => {
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
                         <Image
-                           source={require("../../../assets/images/icon.jpg")}
-                           style={{width: 140, height: 140}}
+                            source={require("../../../assets/images/icon.jpg")}
+                            style={{ width: 140, height: 140 }}
                         />
                         <Text style={styles.text}>You don't have any inbox messages</Text>
                     </View>

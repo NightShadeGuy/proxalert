@@ -12,7 +12,7 @@ import {
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = ({ user, setUser }) => {
+const BottomTabs = ({ user, setUser, accountDetails }) => {
     return (
         <Tab.Navigator
             screenOptions={{
@@ -35,7 +35,6 @@ const BottomTabs = ({ user, setUser }) => {
             </Tab.Screen>
             <Tab.Screen
                 name="Inbox"
-                component={InboxScreen}
                 options={{
                     tabBarIcon: ({ focused }) =>
                         <FontAwesome
@@ -50,7 +49,9 @@ const BottomTabs = ({ user, setUser }) => {
                     },
                     headerTitleAlign: "center",
                 }}
-            ></Tab.Screen>
+            >
+              {() => <InboxScreen user={user} accountDetails={accountDetails} /> }  
+            </Tab.Screen>
             <Tab.Screen
                 name="Hotlines"
                 component={HotlineScreen}

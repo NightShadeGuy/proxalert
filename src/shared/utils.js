@@ -3,7 +3,7 @@ import { db } from "../config/firebase";
 import { collection } from "firebase/firestore";
 import { useFonts } from "expo-font";
 import moment from "moment";
-
+import Toast from 'react-native-toast-message';
 
 //Colors 
 export const defaultTheme = "#D64045";
@@ -19,14 +19,6 @@ export const loadFonts = () => {
         "NotoSans-Bold": require("../../assets/fonts/NotoSans-Bold.ttf"),
     });
 };
-
-export const toast = (message) => {
-    ToastAndroid.showWithGravity(
-        message,
-        ToastAndroid.LONG,
-        ToastAndroid.TOP
-    );
-}
 
 export const emergencyTypes = [
     {
@@ -57,3 +49,29 @@ export const calendarFormat = (nanoseconds, seconds) => {     //Ex. Today at 10:
     const milliseconds = seconds * 1000 + nanoseconds / 1e6;
     return moment(milliseconds).calendar();
 }
+
+export const toast = (message) => {
+    ToastAndroid.showWithGravity(
+        message,
+        ToastAndroid.LONG,
+        ToastAndroid.TOP
+    );
+}
+
+export const showToast = (message1 = "", message2 = "", type = "success") => {
+    Toast.show({
+      type: type,
+      text1: message1,
+      text2: message2,
+      text1Style: {
+        fontSize: 15,
+        color: "green"
+      },
+      text2Style: {
+        fontSize: 11
+      },
+      visibilityTime: 2000,
+      swipeable: true,
+      position: "bottom"
+    })
+  }

@@ -4,9 +4,12 @@ import {
     View,
     Modal,
     Pressable,
-    TouchableHighlight
+    TouchableHighlight,
+    Image,
+    ScrollView,
+    TouchableOpacity
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
     FontAwesome,
     Feather,
@@ -15,24 +18,39 @@ import {
 import moment from "moment";
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
-import { locationRef, toast } from '../../shared/utils';
+import { emergencyRequestRef, toast } from '../../shared/utils';
 import { doc, deleteDoc } from "firebase/firestore";
 import StatusModal from "../../components/StatusModal";
+import MapView, {
+    Marker,
+    Polyline,
+    PROVIDER_GOOGLE
+} from 'react-native-maps';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const InboxViewDetails = () => {
+const InboxViewDetails = ({ user, accountDetails }) => {
     const navigation = useNavigation();
     const route = useRoute();
-    const {
-        user,
+    const { name,
         id,
         createdAt: { nanoseconds, seconds },
-        address: { city, district, region, street, streetNumber }
+        address: { city, district, region, street, streetNumber },
+        emergencyType,
+        latitude,
+        longitude,
+        photoUrl,
+        proofPhotoUrl,
+        responder
     } = route.params;
 
     console.log(route);
 
     const [showDeleteMessage, setShowDeleteMessage] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showProofImage, setShowProofImage] = useState(false);
+
+    const latitudeDelta = 0.0922;
+    const longitudeDelta = 0.0421;
 
     const calendarFormat = (nanoseconds, seconds) => {
         const milliseconds = seconds * 1000 + nanoseconds / 1e6;
@@ -43,7 +61,7 @@ const InboxViewDetails = () => {
         setIsDeleting(true);
         setShowDeleteMessage(false);
         try {
-            await deleteDoc(doc(locationRef, id));
+            await deleteDoc(doc(emergencyRequestRef, id));
         } catch (err) {
             toast(err.message);
         } finally {
@@ -52,8 +70,29 @@ const InboxViewDetails = () => {
         }
     }
 
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableHighlight
+                    activeOpacity={0.6}
+                    underlayColor="rgba(0, 0, 0, 0.5)"
+                    style={{ position: "absolute", right: 0, borderRadius: 20 }}
+                    onPress={() => setShowDeleteMessage(!showDeleteMessage)}>
+                    <MaterialIcons
+                        name="delete-outline"
+                        size={30}
+                        color="white"
+                    />
+                </TouchableHighlight>
+            )
+        })
+    }, [])
+
     return (
-        <View style={{ flex: 1, backgroundColor: "#edf2f8" }}>
+        <ScrollView
+            style={{ flex: 1, backgroundColor: "#edf2f8" }}
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.container}>
                 <View style={styles.icon}>
                     <FontAwesome
@@ -66,31 +105,150 @@ const InboxViewDetails = () => {
                     <Text style={[styles.text, { textAlign: "center" }]}>
                         {calendarFormat(nanoseconds, seconds)}
                     </Text>
-                    <TouchableHighlight
-                        activeOpacity={0.6}
-                        underlayColor="#DDDDDD"
-                        style={{ position: "absolute", right: 0, borderRadius: 5 }}
-                        onPress={() => setShowDeleteMessage(!showDeleteMessage)}>
-                        <MaterialIcons
-                            name="delete-outline"
-                            size={30}
-                            color="red"
-                        />
-                    </TouchableHighlight>
                 </View>
-                <Text style={[styles.textTitle, { textAlign: "center" }]}>
-                    You requested to saved your location
+
+                <View style={{ alignItems: "center", paddingTop: 20 }}>
+                    <Image
+                        source={{ uri: accountDetails.isResponder ? photoUrl : responder.photoUrl }}
+                        style={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 40,
+                            alignItems: "center"
+                        }}
+                    />
+                    {!accountDetails.isResponder && (
+                        <Text style={styles.textDetails}>Responder: {responder.name}</Text>
+                    )}
+                    <Text style={[styles.textTitle, { textAlign: "center" }]}>
+                        {accountDetails.isResponder
+                            ? `My emergency response forname}`
+                            : `Congratulations!, ${responder.name} completed your request`
+                        }
+                    </Text>
+                </View>
+
+
+                <MapView
+                    style={{ width: "100%", height: 300 }}
+                    region={{
+                        latitude,
+                        longitude,
+                        latitudeDelta,
+                        longitudeDelta,
+                        altitude: 0
+                    }}
+                    provider={PROVIDER_GOOGLE}
+                >
+
+                    {latitude && longitude && (
+                        <Marker
+                            coordinate={{
+                                latitude,
+                                longitude,
+                                latitudeDelta,
+                                longitudeDelta,
+                                altitude: 0
+                            }}
+                            title={`Me: ${name}`}
+                        >
+                            {user.photoURL ? (
+                                <Image
+                                    source={{ uri: photoUrl }}
+                                    style={{
+                                        height: 40,
+                                        width: 40,
+                                        borderRadius: 20,
+                                    }}
+                                />
+                            ) : (
+                                <MaterialCommunityIcons
+                                    name="human-handsup"
+                                    size={40}
+                                    color="green"
+                                />
+                            )}
+                        </Marker>
+                    )}
+
+                    {responder && (
+                        <Marker
+                            coordinate={{
+                                latitude: responder.latitude,
+                                longitude: responder.longitude,
+                                latitudeDelta,
+                                longitudeDelta,
+                                altitude: 0
+                            }}
+                            title={`Responder: ${responder.name}`}
+                        >
+                            {user.photoURL ? (
+                                <Image
+                                    source={{ uri: responder.photoUrl }}
+                                    style={{
+                                        height: 40,
+                                        width: 40,
+                                        borderRadius: 20,
+                                    }}
+                                />
+                            ) : (
+                                <Image
+                                    source={{ uri: "https://i.pinimg.com/564x/6e/85/40/6e85408d47cd78ba6cd3d3a188035795.jpg" }}
+                                    style={{
+                                        height: 40,
+                                        width: 40,
+                                        borderRadius: 20,
+                                    }}
+                                />
+                            )}
+                        </Marker>
+                    )}
+                </MapView>
+
+
+                <Text style={styles.textDetails}>
+                    {accountDetails.isResponder ? "User Details" : "My Details"}
                 </Text>
-                <Text style={styles.textDetails}>Details</Text>
                 <View style={{ paddingHorizontal: 10 }}>
-                    <Text style={styles.text}>Name: {user}</Text>
-                    <Text style={styles.text}>ID: {id} {/* Temporary displaying this id */}</Text>
-                    <Text style={styles.text}>Region: {region}</Text>
-                    <Text style={styles.text}>City: {city}</Text>
-                    <Text style={styles.text}>District: {district}</Text>
-                    <Text style={styles.text}>Street Number: {streetNumber}</Text>
-                    <Text style={styles.text}>Street: {street}</Text>
+                    {name && (<Text style={styles.text}>Name: {name}</Text>)}
+                    {emergencyType && (<Text style={styles.text}>Emergency type: {emergencyType}</Text>)}
+                    {region && (<Text style={styles.text}>Region: {region}</Text>)}
+                    {city && (<Text style={styles.text}>City: {city}</Text>)}
+                    {district && (<Text style={styles.text}>District: {district}</Text>)}
+                    {streetNumber && (<Text style={styles.text}>Street Number: {streetNumber}</Text>)}
+                    {street && (<Text style={styles.text}>Street: {street}</Text>)}
                 </View>
+
+                {proofPhotoUrl && (
+                    <View>
+                        <Text style={styles.textDetails}>
+                            {accountDetails.isResponder ? "Proof Image Attached" : "View my uploaded Image"}
+                        </Text>
+
+                        <View style={{ position: "relative" }} >
+                            <Image
+                                source={{ uri: proofPhotoUrl }}
+                                style={{ height: 300, width: "100%" }}
+                                blurRadius={showProofImage ? 0 : 40}
+                            />
+                            {!showProofImage && (
+                                <TouchableOpacity
+                                    activeOpacity={0.4}
+                                    style={{
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "50%",
+                                        transform: [{ translateX: -20 }, { translateY: -20 }]  // Adjust based on icon size
+                                    }}
+                                    onPress={() => setShowProofImage(!showProofImage)}
+                                >
+                                    <Feather name="eye" size={40} color="white" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </View>
+                )}
+
             </View>
 
             <Modal
@@ -144,7 +302,7 @@ const InboxViewDetails = () => {
                     message="Deleting..."
                 />
             )}
-        </View>
+        </ScrollView>
     )
 }
 
@@ -180,6 +338,7 @@ const styles = StyleSheet.create({
         color: "gray",
         fontSize: 15,
         fontFamily: "NotoSans-SemiBold",
+        marginVertical: 5
     },
     text: {
         color: "gray",

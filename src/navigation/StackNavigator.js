@@ -16,6 +16,8 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { accountsRef } from "../shared/utils";
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 const Stack = createNativeStackNavigator();
 
@@ -65,8 +67,50 @@ const StackNavigator = () => {
     }
   }
 
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+
+  const registerForPushNotificationsAsync = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        console.log('Failed to get push token for push notification!');
+        return;
+      }
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log(token);
+    } catch (error) {
+      console.error('Error getting push token:', error);
+    }
+  };
+
+  const handleNotification = (notification) => {
+    console.log('Notification received:', notification);
+  };
+
+  const handleNotificationResponse = (response) => {
+    console.log('Notification response:', response);
+  };
+
   useEffect(() => {
     loadAccounts();
+
+    registerForPushNotificationsAsync();
+    Notifications.addNotificationReceivedListener(handleNotification);
+    Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
   }, [user])
 
   console.log("Snapshot loadAccounts", responders);
@@ -85,7 +129,13 @@ const StackNavigator = () => {
         )}
         {user && (
           <Stack.Screen name="Main">
-            {() => <BottomTabs user={user} setUser={setUser} />}
+            {() =>
+              <BottomTabs
+                user={user}
+                setUser={setUser}
+                accountDetails={accountDetails}
+              />
+            }
           </Stack.Screen>
         )}
         <Stack.Screen name="Register">
@@ -105,7 +155,6 @@ const StackNavigator = () => {
         </Stack.Screen>
         <Stack.Screen
           name="Inbox-details"
-          component={InboxViewDetails}
           options={{
             headerShown: true,
             headerTitle: "Inbox",
@@ -116,7 +165,9 @@ const StackNavigator = () => {
             headerTitleAlign: "center",
             headerTintColor: "white",
           }}
-        />
+        >
+          {() => <InboxViewDetails  user={user}  accountDetails={accountDetails} />}
+        </Stack.Screen>
         <Stack.Screen
           name="Map"
           options={{

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { defaultTheme } from '../shared/utils'
 import { db } from '../config/firebase';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { updateDoc, doc } from 'firebase/firestore';
 
 const AcceptRequestCard = ({
@@ -17,6 +17,7 @@ const AcceptRequestCard = ({
     moveCamera,
     documentId,
     photoUrl,
+    setCompletedRequestShowModal
 }) => {
 
     const cancelEmergencyRequest = async (docId) => {
@@ -36,6 +37,18 @@ const AcceptRequestCard = ({
         }
     }
 
+    const handleCompletedShowModal = async (docId) => {
+        try {
+            const emergencyRequest = doc(db, "emergency-request", docId);
+            await updateDoc(emergencyRequest, {
+                showCompletedModal: true
+            })
+
+            setCompletedRequestShowModal(true);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
 
     return (
         <TouchableOpacity
@@ -54,12 +67,21 @@ const AcceptRequestCard = ({
                         <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
                         <Text style={styles.text}>{fullAddress}</Text>
                     </View>
-                    <TouchableOpacity
-                        style={styles.button}
-                        onPress={() => cancelEmergencyRequest(documentId)}
-                    >
-                        <MaterialCommunityIcons name="cancel" size={24} color="red" />
-                    </TouchableOpacity>
+                    <View style={{ rowGap: 10 }}>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => cancelEmergencyRequest(documentId)}
+                        >
+                            <MaterialCommunityIcons name="cancel" size={24} color="red" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.button, { backgroundColor: "#4caf50" }]}
+                            onPress={() => handleCompletedShowModal(documentId)}
+                        >
+                            <MaterialIcons name="done" size={24} color="white" />
+
+                        </TouchableOpacity>
+                    </View>
                 </View>
             ) : (
                 <View style={styles.row}>
@@ -72,14 +94,15 @@ const AcceptRequestCard = ({
                         <Text style={styles.text}>{contactNumber}</Text>
                     </View>
                     <TouchableOpacity
-                        style={styles.button}
+                        style={[styles.button, { width: 50, height: 50 }]}
                         onPress={() => cancelEmergencyRequest(documentId)}
                     >
                         <MaterialCommunityIcons name="cancel" size={24} color="red" />
                     </TouchableOpacity>
                 </View>
-            )}
-        </TouchableOpacity>
+            )
+            }
+        </TouchableOpacity >
     )
 }
 
@@ -119,8 +142,8 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: "whitesmoke",
-        height: 50,
-        width: 50,
+        height: 40,
+        width: 40,
         borderRadius: 25,
         justifyContent: "center",
         alignItems: "center",
