@@ -122,7 +122,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                     )}
                     <Text style={[styles.textTitle, { textAlign: "center" }]}>
                         {accountDetails.isResponder
-                            ? `My emergency response forname}`
+                            ? `My emergency response for ${name}`
                             : `Congratulations!, ${responder.name} completed your request`
                         }
                     </Text>
@@ -171,7 +171,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                         </Marker>
                     )}
 
-                    {responder && (
+                    {responder && responder.latitude && responder.longitude && (
                         <Marker
                             coordinate={{
                                 latitude: responder.latitude,

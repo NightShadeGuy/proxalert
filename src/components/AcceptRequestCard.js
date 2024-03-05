@@ -1,8 +1,20 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import {
+    StyleSheet,
+    Text,
+    View,
+    Image,
+    TouchableOpacity,
+    Linking,
+    ScrollView
+} from 'react-native'
 import React from 'react'
 import { defaultTheme } from '../shared/utils'
 import { db } from '../config/firebase';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import {
+    MaterialCommunityIcons,
+    MaterialIcons,
+    Ionicons
+} from '@expo/vector-icons';
 import { updateDoc, doc } from 'firebase/firestore';
 
 const AcceptRequestCard = ({
@@ -67,20 +79,31 @@ const AcceptRequestCard = ({
                         <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
                         <Text style={styles.text}>{fullAddress}</Text>
                     </View>
-                    <View style={{ rowGap: 10 }}>
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={() => cancelEmergencyRequest(documentId)}
+                    <View>
+                        <ScrollView 
+                           showsVerticalScrollIndicator={false}
                         >
-                            <MaterialCommunityIcons name="cancel" size={24} color="red" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.button, { backgroundColor: "#4caf50" }]}
-                            onPress={() => handleCompletedShowModal(documentId)}
-                        >
-                            <MaterialIcons name="done" size={24} color="white" />
+                            <TouchableOpacity
+                                style={[styles.button, { marginTop: 5}]}
+                                onPress={() => cancelEmergencyRequest(documentId)}
+                            >
+                                <MaterialCommunityIcons name="cancel" size={24} color="red" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
+                                onPress={() => handleCompletedShowModal(documentId)}
+                            >
+                                <MaterialIcons name="done" size={24} color="white" />
 
-                        </TouchableOpacity>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
+                                onPress={() => Linking.openURL(`tel:${contactNumber}`)}
+                            >
+                                <Ionicons name="call-sharp" size={24} color="white" />
+
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             ) : (
@@ -93,12 +116,21 @@ const AcceptRequestCard = ({
                         <Text style={styles.headerTitle}>Responder: {name}</Text>
                         <Text style={styles.text}>{contactNumber}</Text>
                     </View>
-                    <TouchableOpacity
-                        style={[styles.button, { width: 50, height: 50 }]}
-                        onPress={() => cancelEmergencyRequest(documentId)}
-                    >
-                        <MaterialCommunityIcons name="cancel" size={24} color="red" />
-                    </TouchableOpacity>
+                    <View style={{ rowGap: 10 }}>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => cancelEmergencyRequest(documentId)}
+                        >
+                            <MaterialCommunityIcons name="cancel" size={24} color="red" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.button, { backgroundColor: "#4caf50" }]}
+                            onPress={() => Linking.openURL(`tel:${contactNumber}`)}
+                        >
+                            <Ionicons name="call-sharp" size={24} color="white" />
+
+                        </TouchableOpacity>
+                    </View>
                 </View>
             )
             }

@@ -146,24 +146,33 @@ const EmergencyRequestCard = ({
                             renderItem={({ item, index }) => (
                                 <View style={{ marginVertical: 6 }}>
                                     <View>
+                                        <Text style={[styles.text, { textAlign: "right", color: "silver" }]}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
                                         <View style={styles.row}>
-                                            <Text style={styles.text}> Name: {item.user} </Text>
-                                            <Text style={styles.text}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
+                                            {item.photoUrl && (
+                                                <Image
+                                                    source={{ uri: item.photoUrl }}
+                                                    style={{ width: 50, height: 50, borderRadius: 25, marginHorizontal: 20 }}
+                                                />
+                                            )}
+                                            <View>
+                                                <Text style={styles.text}> Name: {item.user} </Text>
+                                                <Text style={styles.text}>Contact number: {item.contactNumber}</Text>
+                                            </View>
                                         </View>
-                                        <Text style={styles.text}>Contact number: {item.contactNumber}</Text>
+
                                         <Text style={styles.text}>Emergency type: {item.emergencyType}</Text>
                                         <Text style={styles.text}> Address: {item.fullAddress} </Text>
                                     </View>
 
                                     {!accountDetails.isResponder && (
                                         <View
-                                            style={[styles.row, {
-                                                justifyContent: item.proofPhotoUrl ? "space-between" : "flex-end"
-                                            }]}
+                                            style={{
+                                                flexDirection: "row",
+                                                justifyContent: item.proofPhotoUrl ? "space-between" : "flex-end",
+                                            }}
                                         >
-
                                             {item.proofPhotoUrl && (
-                                                <>
+                                                <View>
                                                     <TouchableOpacity
                                                         style={{ paddingVertical: 5 }}
                                                         onPress={() => {
@@ -186,7 +195,7 @@ const EmergencyRequestCard = ({
                                                         }}
                                                         picture={item.proofPhotoUrl}
                                                     />
-                                                </>
+                                                </View>
                                             )}
 
                                             <TouchableOpacity
@@ -227,18 +236,10 @@ const EmergencyRequestCard = ({
                                                         }}
                                                         picture={item.proofPhotoUrl}
                                                     />
-
                                                 </>
                                             )}
 
                                             <View style={styles.buttonContainer}>
-                                                <TouchableOpacity
-                                                    style={[styles.button, {
-                                                        backgroundColor: "#d31539",
-                                                    }]}
-                                                >
-                                                    <Text style={styles.btnText}>Decline</Text>
-                                                </TouchableOpacity>
                                                 <TouchableOpacity
                                                     style={[styles.button, {
                                                         backgroundColor: "#228353",
@@ -270,7 +271,7 @@ const EmergencyRequestCard = ({
                                 </View>
                             )}
                             ItemSeparatorComponent={() => (
-                                <View style={{ borderBottomWidth: 1, borderColor: "silver" }}></View>
+                                <View style={{ borderBottomWidth: 5, borderColor: "silver" }}></View>
                             )}
                             ListEmptyComponent={() => (
                                 <View style={styles.emptyContainer}>
@@ -281,7 +282,7 @@ const EmergencyRequestCard = ({
                                     <Text style={styles.text}>{emptyTitle}</Text>
                                 </View>
                             )}
-                            
+
                         />
                     </View>
                 </View>
@@ -326,7 +327,10 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
+        columnGap: -15,
+        flexDirection: "row-reverse",
+        marginTop: 5
     },
     emptyContainer: {
         justifyContent: 'center',
@@ -335,8 +339,6 @@ const styles = StyleSheet.create({
         height: 300,
     },
     buttonContainer: {
-        flexDirection: "row",
-        columnGap: 10,
         marginHorizontal: 20,
         marginVertical: 10
     },
