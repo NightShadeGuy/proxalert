@@ -60,18 +60,43 @@ export const toast = (message) => {
 
 export const showToast = (message1 = "", message2 = "", type = "success") => {
     Toast.show({
-      type: type,
-      text1: message1,
-      text2: message2,
-      text1Style: {
-        fontSize: 15,
-        color: "green"
-      },
-      text2Style: {
-        fontSize: 11
-      },
-      visibilityTime: 2000,
-      swipeable: true,
-      position: "bottom"
+        type: type,
+        text1: message1,
+        text2: message2,
+        text1Style: {
+            fontSize: 15,
+            color: "green"
+        },
+        text2Style: {
+            fontSize: 11
+        },
+        visibilityTime: 4000,
+        swipeable: true,
+        position: "bottom"
     })
-  }
+}
+
+export const sendNotification = async (token, title, body) => {
+    //notification message
+    const message = {
+        to: token,
+        sound: "default",
+        title: title,
+        body: body
+    }
+
+    try {
+        await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: {
+                host: "exp.host",
+                accept: "application/json",
+                "accept-encoding": "gzip, deflate",
+                "content-type": "application/json"
+            },
+            body: JSON.stringify(message),
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}

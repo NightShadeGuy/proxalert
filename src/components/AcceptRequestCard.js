@@ -8,7 +8,7 @@ import {
     ScrollView
 } from 'react-native'
 import React from 'react'
-import { defaultTheme } from '../shared/utils'
+import { defaultTheme, sendNotification } from '../shared/utils'
 import { db } from '../config/firebase';
 import {
     MaterialCommunityIcons,
@@ -29,7 +29,9 @@ const AcceptRequestCard = ({
     moveCamera,
     documentId,
     photoUrl,
-    setCompletedRequestShowModal
+    setCompletedRequestShowModal,
+    expoPushToken,
+    responderExpoPushToken
 }) => {
 
     const cancelEmergencyRequest = async (docId) => {
@@ -43,7 +45,8 @@ const AcceptRequestCard = ({
                 direction: null
             });
 
-            console.log("Cancel request successfully from responder");
+            sendNotification([expoPushToken, responderExpoPushToken], "Request Got Cancelled", "");
+            console.log("Cancel request successfully to DB");
         } catch (error) {
             console.error(error.message);
         }
@@ -75,16 +78,16 @@ const AcceptRequestCard = ({
                         style={styles.image}
                     />
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>{name}</Text>
-                        <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
-                        <Text style={styles.text}>{fullAddress}</Text>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={styles.headerTitle}>{name}</Text>
+                            <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
+                            <Text style={styles.text}>{fullAddress}</Text>
+                        </ScrollView>
                     </View>
                     <View>
-                        <ScrollView 
-                           showsVerticalScrollIndicator={false}
-                        >
+                        <ScrollView showsVerticalScrollIndicator={false}>
                             <TouchableOpacity
-                                style={[styles.button, { marginTop: 5}]}
+                                style={[styles.button, { marginTop: 5 }]}
                                 onPress={() => cancelEmergencyRequest(documentId)}
                             >
                                 <MaterialCommunityIcons name="cancel" size={24} color="red" />
@@ -117,19 +120,21 @@ const AcceptRequestCard = ({
                         <Text style={styles.text}>{contactNumber}</Text>
                     </View>
                     <View style={{ rowGap: 10 }}>
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={() => cancelEmergencyRequest(documentId)}
-                        >
-                            <MaterialCommunityIcons name="cancel" size={24} color="red" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.button, { backgroundColor: "#4caf50" }]}
-                            onPress={() => Linking.openURL(`tel:${contactNumber}`)}
-                        >
-                            <Ionicons name="call-sharp" size={24} color="white" />
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <TouchableOpacity
+                                style={[styles.button, { marginTop: 5 }]}
+                                onPress={() => cancelEmergencyRequest(documentId)}
+                            >
+                                <MaterialCommunityIcons name="cancel" size={24} color="red" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
+                                onPress={() => Linking.openURL(`tel:${contactNumber}`)}
+                            >
+                                <Ionicons name="call-sharp" size={24} color="white" />
 
-                        </TouchableOpacity>
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             )

@@ -30,12 +30,10 @@ const InboxScreen = ({ user, accountDetails }) => {
 
     //This will fetch list of saved user location
     const loadAllRequestSaved = async () => {
-
-
         try {
             const userId = auth.currentUser.uid;
 
-            const conditionalQuery = accountDetails.isResponder
+            const conditionalQuery = accountDetails?.isResponder
                 ? query(emergencyRequestRef,
                     where("responderUid", "==", userId),
                     where("emergencyStatus", "==", "completed"),

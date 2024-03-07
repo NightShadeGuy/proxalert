@@ -14,7 +14,8 @@ import {
     defaultTheme,
     toast,
     emergencyRequestRef,
-    calendarFormat
+    calendarFormat,
+    sendNotification
 } from '../shared/utils';
 import {
     deleteDoc,
@@ -25,6 +26,7 @@ import { db, storage } from '../config/firebase';
 import { ref, deleteObject } from 'firebase/storage';
 import UploadedPhotoModal from './UploadedPhotoModal';
 
+
 const EmergencyRequestCard = ({
     title,
     emptyTitle,
@@ -32,12 +34,20 @@ const EmergencyRequestCard = ({
     setShowRequestModal,
     accountDetails,
     emergencyRequest,
+    setEmergencyRequest,
     latitude,
     longitude,
     moveToRegion,
-    photoUrl
+    photoUrl,
+    currentCity,
+    loadEmergencyRequest,
+    expoPushToken
 }) => {
     const [showUploadedPhoto, setShowUploadedPhoto] = useState({});
+    const [selectFilter, setSelectFilter] = useState("all");
+
+    //console.log("SelectFilter", selectFilter, currentCity);
+    //console.log("ShowUploadedPhoto", showUploadedPhoto);
 
     useEffect(() => {
         // Create initial state for showUploadedPhoto based on emergencyRequest length
@@ -45,9 +55,6 @@ const EmergencyRequestCard = ({
             Array.from({ length: emergencyRequest.length }, () => false)
         );
     }, [emergencyRequest]);
-
-    console.log("ShowUploadedPhoto", showUploadedPhoto);
-
 
     const deleteEmergencyRequest = async (id, imageUrl) => {
         try {
@@ -83,12 +90,18 @@ const EmergencyRequestCard = ({
                 responder: {
                     name: accountDetails.user,
                     contactNumber: accountDetails.contactNumber,
+                    notificationToken: expoPushToken,
                     photoUrl,
                     latitude,
                     longitude,
                 }
             }, { merge: true });
             moveToRegion(user.latitude, user.longitude, 0.0922, 0.0421)
+            sendNotification(
+                user.notificationToken,
+                "Your request has been accepted.",
+                `Respondent ${accountDetails.user} is prepared to go to your area.`
+            )
         } catch (error) {
             console.error(error.message);
         } finally {
@@ -96,7 +109,19 @@ const EmergencyRequestCard = ({
         }
     }
 
+    const filterEmergencyRequest = (city) => {
+        setSelectFilter(city)
 
+        let filteredRequest;
+
+        if (city === currentCity) {
+            filteredRequest = emergencyRequest.filter(info => info.address.city === currentCity);
+            setEmergencyRequest(filteredRequest);
+        } else {
+            loadEmergencyRequest();
+            console.log("Doesn't match", filteredRequest);
+        }
+    }
 
     return (
         <>
@@ -118,26 +143,76 @@ const EmergencyRequestCard = ({
                     }]}>
                         <View
                             style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "space-between",
                                 paddingVertical: 10,
                                 borderBottomWidth: 1,
                                 borderColor: "silver",
                                 paddingHorizontal: 20
                             }}
                         >
-                            <Text style={{
-                                fontFamily: "NotoSans-Bold",
-                                fontSize: 17,
-                                color: defaultTheme
-                            }}>{title}</Text>
-                            <TouchableOpacity
-                                activeOpacity={0.2}
-                                onPress={() => setShowRequestModal(!showRequestModal)}
-                            >
-                                <Feather name="x" size={30} color="black" />
-                            </TouchableOpacity>
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                }}>
+                                <Text
+                                    style={{
+                                        fontFamily: "NotoSans-Bold",
+                                        fontSize: 17,
+                                        color: defaultTheme
+                                    }}
+                                >
+                                    {title}
+                                </Text>
+                                <TouchableOpacity
+                                    activeOpacity={0.2}
+                                    onPress={() => setShowRequestModal(!showRequestModal)}
+                                >
+                                    <Feather name="x" size={30} color="black" />
+                                </TouchableOpacity>
+                            </View>
+                            {accountDetails.isResponder && (
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        justifyContent: "flex-start",
+                                        columnGap: 10
+                                    }}
+                                >
+                                    <Text style={styles.filterText}>Filter:</Text>
+                                    <TouchableOpacity
+                                        style={[styles.filterButton, {
+                                            backgroundColor: selectFilter === "all" ? "#228353" : "transparent"
+                                        }]}
+                                        onPress={() => filterEmergencyRequest("all")}
+                                        disabled={selectFilter === "all"}
+                                    >
+                                        <Text
+                                            style={[styles.filterText, {
+                                                color: selectFilter === "all" ? "white" : "gray"
+                                            }]}
+                                        >
+                                            All
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.filterButton, {
+                                            backgroundColor: selectFilter === currentCity ? "#228353" : "transparent"
+                                        }]}
+                                        onPress={() => filterEmergencyRequest(currentCity)}
+                                        disabled={selectFilter === currentCity}
+                                    >
+                                        <Text
+                                            style={[styles.filterText, {
+                                                color: selectFilter === currentCity ? "white" : "gray"
+                                            }]}
+                                        >
+                                            My Current City
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
                         <FlatList
                             data={emergencyRequest}
@@ -310,6 +385,17 @@ const styles = StyleSheet.create({
         color: "gray",
         fontFamily: "NotoSans-Medium",
         paddingHorizontal: 20
+    },
+    filterText: {
+        fontFamily: "NotoSans-Medium",
+        color: "gray",
+        fontSize: 11
+    },
+    filterButton: {
+        borderWidth: 1,
+        borderColor: "silver",
+        paddingHorizontal: 10,
+        borderRadius: 20
     },
     loading: {
         flexDirection: "row",

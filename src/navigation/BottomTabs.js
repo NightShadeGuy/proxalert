@@ -3,16 +3,17 @@ import { StyleSheet } from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from "../screens/HomeScreen";
 import InboxScreen from "../screens/inbox/InboxScreen";
-import HotlineScreen from "../screens/HotlineScreen";
-import {
-    MaterialIcons,
-    Ionicons,
-    FontAwesome,
-} from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
-const BottomTabs = ({ user, setUser, accountDetails }) => {
+const BottomTabs = ({
+    user,
+    setUser,
+    accountDetails,
+    expoPushToken,
+    accountId
+}) => {
     return (
         <Tab.Navigator
             screenOptions={{
@@ -31,7 +32,14 @@ const BottomTabs = ({ user, setUser, accountDetails }) => {
                         />,
                 }}
             >
-                {() => <HomeScreen user={user} setUser={setUser} />}
+                {() =>
+                    <HomeScreen
+                        user={user}
+                        setUser={setUser}
+                        expoPushToken={expoPushToken}
+                        accountId={accountId}
+                    />
+                }
             </Tab.Screen>
             <Tab.Screen
                 name="Inbox"
@@ -50,30 +58,18 @@ const BottomTabs = ({ user, setUser, accountDetails }) => {
                     headerTitleAlign: "center",
                 }}
             >
-              {() => <InboxScreen user={user} accountDetails={accountDetails} /> }  
+                {() => <InboxScreen user={user} accountDetails={accountDetails} />}
             </Tab.Screen>
-            <Tab.Screen
-                name="Hotlines"
-                component={HotlineScreen}
-                options={{
-                    tabBarIcon: ({ focused }) =>
-                        < Ionicons
-                            name="call"
-                            size={24}
-                            color={focused ? "#EB5757" : "#828282"}
-                        />
-                }}
-            />
         </Tab.Navigator>
     )
 }
 
 const styles = StyleSheet.create({
     standard: {
-     color: "white",
-     fontSize: 21,
-     fontFamily: "NotoSans-Bold"
+        color: "white",
+        fontSize: 21,
+        fontFamily: "NotoSans-Bold"
     }
- })
+})
 
 export default BottomTabs;

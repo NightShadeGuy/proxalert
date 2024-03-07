@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "517909920098",
+    "project_id": "proxalert-78672",
+    "storage_bucket": "proxalert-78672.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517909920098:android:133ae8c69672302662543b",
+        "android_client_info": {
+          "package_name": "com.proxalert"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpDH5FyBhVD6xqAwbhFkV1HRREKiAJ3IQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

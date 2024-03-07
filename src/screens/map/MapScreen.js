@@ -41,7 +41,7 @@ import {
 import {
   toast,
   defaultTheme,
-  showToast
+  sendNotification
 } from '../../shared/utils';
 import {
   AntDesign,
@@ -69,6 +69,8 @@ const MapScreen = ({
   user,
   setUser,
   accountDetails,
+  expoPushToken,
+  respondersToken
 }) => {
   const navigation = useNavigation();
   //console.log("Current user", user);
@@ -231,12 +233,19 @@ const MapScreen = ({
           longitude: region.longitude,
           fullAddress: reportLocation,
           address: { ...details },
+          notificationToken: expoPushToken,
           showCompletedModal: false
         });
 
         console.log("Document written:", docRef.id);
         setIsSaved(true);
         setShowRequestModal(true); // state for emergency request modal
+
+        sendNotification(
+          respondersToken,
+          `An assistance request has been made by ${user.displayName}.`,
+          `The sort of emergency is ${selectEmergencyType}.`
+        )
       } else {
         toast("You need select your emergency type and your location");
       }
@@ -1222,6 +1231,8 @@ const MapScreen = ({
           moveCamera={moveCamera}
           documentId={acceptedRequest.id}
           photoUrl={acceptedRequest.responder.photoUrl}
+          expoPushToken={expoPushToken}
+          responderExpoPushToken={acceptedRequest.responder.notificationToken}
         />
       )}
 

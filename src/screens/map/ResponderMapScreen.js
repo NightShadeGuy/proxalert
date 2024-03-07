@@ -62,6 +62,7 @@ const ResponderMapScreen = ({
     user,
     setUser,
     accountDetails,
+    expoPushToken
 }) => {
     const navigation = useNavigation();
     //console.log("Current user", user);
@@ -153,7 +154,7 @@ const ResponderMapScreen = ({
             const subscription = await Location.watchPositionAsync(
                 {
                     enableHighAccuracy: true,
-                    distanceInterval: 5
+                    distanceInterval: 10
                 },
                 (newLocation) => {
                     updateLocation(newLocation);
@@ -210,20 +211,6 @@ const ResponderMapScreen = ({
             console.error(`Error: ${error.message}`);
         }
     };
-
-    /*   const fetchSelectedDestination = (items) => {
-      
-        const selectedDestination = items.filter(marker => marker.osm_id === selectDestination);
-        console.log("Selected destination", selectedDestination[0]);
-        const coordinates = {
-          latitude: parseFloat(selectedDestination[0]?.lat),
-          longitude: parseFloat(selectedDestination[0]?.lon),
-        }
-        setDestination(coordinates);
-        console.log("destination state", destination);
-    
-        return coordinates;
-      } */
 
     const updateResponderLocationToDB = async (latitude, longitude, documentId) => {
         try {
@@ -906,7 +893,7 @@ const ResponderMapScreen = ({
             )}
 
             <EmergencyRequestCard
-                title="Persons who needs help"
+                title="People in need of assistance"
                 emptyTitle="Currently no one has asked for assistance"
                 showRequestModal={showRequestModal}
                 setShowRequestModal={setShowRequestModal}
@@ -917,6 +904,9 @@ const ResponderMapScreen = ({
                 longitude={region.longitude}
                 moveToRegion={moveToRegion}
                 photoUrl={user.photoURL}
+                currentCity={details?.city}
+                loadEmergencyRequest={loadEmergencyRequest}
+                expoPushToken={expoPushToken}
             />
 
             {acceptedRequest && (
@@ -933,6 +923,8 @@ const ResponderMapScreen = ({
                     documentId={acceptedRequest.id}
                     photoUrl={acceptedRequest.photoUrl}
                     setCompletedRequestShowModal={setCompletedRequestShowModal}
+                    expoPushToken={expoPushToken}
+                    responderExpoPushToken={acceptedRequest.notificationToken}
                 />
             )}
 

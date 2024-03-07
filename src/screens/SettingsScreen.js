@@ -73,8 +73,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  console.log(username, phoneNumber);
-
   const updateUserInfo = async () => {
     try {
       await updateProfile(user, {
@@ -110,7 +108,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
       }
 
       setShowInfo(!showInfo);
-      //toast("Updated successfully");
       showToast("Updated successfully");
     } catch (error) {
       console.error(error.message);
@@ -200,7 +197,7 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
                 <TextInput
                   style={[input, font]}
                   placeholder="Email..."
-                  value={user.email}
+                  value={user?.email}
                 />
               </View>
 

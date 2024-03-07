@@ -38,7 +38,8 @@
           "apiKey": "AIzaSyAJwBJZ7YHp0T_oEAyHjsseeCmQI5uQOj0"
         }
       },
-      "package": "com.deamn.proxalert"
+      "googleServicesFile": "./google-services.json",
+      "package": "com.proxalert"
     },
     "web": {
       "favicon": "./assets/favicon.png"

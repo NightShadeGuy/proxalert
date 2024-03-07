@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,12 +7,21 @@ import {
   Pressable,
   Animated,
   TouchableOpacity,
+  TouchableHighlight,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { loadFonts } from "../shared/utils";
+import { loadFonts, showToast } from "../shared/utils";
+import { updateDoc, doc } from "firebase/firestore"
+import { db } from '../config/firebase';
 
-const HomeScreen = ({ user, setUser }) => {
+
+const HomeScreen = ({
+  user,
+  setUser,
+  expoPushToken,
+  accountId
+}) => {
   const navigation = useNavigation();
   const [fontsLoaded] = loadFonts();
 
@@ -29,6 +38,7 @@ const HomeScreen = ({ user, setUser }) => {
     textSection,
   } = styles;
 
+  const [loading, setLoading] = useState(false);
   const scaleValue = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
@@ -46,6 +56,22 @@ const HomeScreen = ({ user, setUser }) => {
       useNativeDriver: true,
     }).start();
   };
+
+  const updateNotificationTokenAccountToDb = async (token, id) => {
+    setLoading(true);
+    try {
+      const accountRef = doc(db, "accounts", id)
+      await updateDoc(accountRef, {
+        notificationToken: token
+      });
+
+      showToast("Successfully updated token to DB", token);
+    } catch (err) {
+      console.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
 
   if (!fontsLoaded) {
@@ -137,6 +163,26 @@ const HomeScreen = ({ user, setUser }) => {
         </Animated.View>
         <View style={textSection}>
           <Text style={[font, { fontSize: 14 }]}>HOLD TO REQUEST EMERGENCY ASSISTANT</Text>
+
+
+          {/* Temporarily using this button in order to work notification */}
+          <TouchableHighlight
+            underlayColor="#d9d9d9"
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 7,
+              borderWidth: 1,
+              backgroundColor: loading === true ? "#d9d9d9" : "white",
+              borderRadius: 20,
+              marginTop: 50
+            }}
+            onPress={() => updateNotificationTokenAccountToDb(expoPushToken, accountId)}
+            disabled={loading === true}
+          >
+            <Text style={[font, { fontSize: 14, color: "black" }]}>Update my token</Text>
+          </TouchableHighlight>
+          {/* <Text style={[font, { fontSize: 12 }]}>{expoPushToken}</Text> */}
+
         </View>
       </View>
 
@@ -152,7 +198,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    rowGap: 100,
+    rowGap: 50,
     backgroundColor: "white"
   },
   section: {

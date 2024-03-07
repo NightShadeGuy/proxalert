@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
-import React, { useEffect, useState } from "react";
-import { auth } from "../config/firebase";
+import React, { useEffect, useState, useRef } from "react";
+import { auth, db } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -14,24 +14,30 @@ import ResponderMapScreen from "../screens/map/ResponderMapScreen";
 import InboxViewDetails from "../screens/inbox/InboxViewDetails";
 import {
   onSnapshot,
+  updateDoc,
+  doc
 } from 'firebase/firestore';
-import { accountsRef } from "../shared/utils";
+import { accountsRef, showToast } from "../shared/utils";
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 
 const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
   const [user, setUser] = useState(null);
-  const [responders, setResponders] = useState([]);
+  const [allAccounts, setAllAccounts] = useState([]);
   const [accountDetails, setAccountDetails] = useState(null);
   const [isResponder, setIsResponder] = useState(false);
 
+  //State for notifications
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [respondersToken, setRespondersToken] = useState([]);
+
   useEffect(() => {
-    console.log("Effect run");
     const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
       if (userObserver) {
         setUser(userObserver);
+        loadAccounts();
         console.log("USER IS STILL LOGGED IN: ", userObserver);
       } else {
         console.log("USER IS LOGGED OUT");
@@ -49,6 +55,13 @@ const StackNavigator = () => {
         const accounts = querySnapshot.docs.map(doc => (
           { ...doc.data(), id: doc.id }
         ))
+        setAllAccounts(accounts);
+        
+        const responderAccount = accounts.filter(account => account.isResponder === true);
+        const responderToken = responderAccount.map(prevAccount => prevAccount.notificationToken);
+        setRespondersToken(responderToken);
+        console.log("Responders token:", responderToken);
+
 
         const myAccount = accounts.find(responder => responder.uid === user?.uid);
         setAccountDetails(myAccount);
@@ -60,12 +73,14 @@ const StackNavigator = () => {
           setIsResponder(false);
         }
 
-        setResponders(accounts);
       })
     } catch (err) {
       console.error(err.message);
     }
   }
+
+  //console.log("Snapshot loadAccounts", allAccounts);
+  //console.log("Is this current user a responder", isResponder);
 
 
   Notifications.setNotificationHandler({
@@ -76,8 +91,19 @@ const StackNavigator = () => {
     }),
   });
 
-  const registerForPushNotificationsAsync = async () => {
-    try {
+  async function registerForPushNotificationsAsync() {
+    let token;
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+
+    if (Device.isDevice) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -87,34 +113,46 @@ const StackNavigator = () => {
       }
 
       if (finalStatus !== 'granted') {
-        console.log('Failed to get push token for push notification!');
+        alert('Failed to get push token for push notification!');
         return;
       }
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
-      console.log(token);
-    } catch (error) {
-      console.error('Error getting push token:', error);
+
+      // Learn more about projectId:
+      // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
+
+      token = (await Notifications.getExpoPushTokenAsync({ projectId: '83c88c18-f9b5-4b4f-8ca1-1fc39452f124' })).data;
+    } else {
+      alert('Must use physical device for Push Notifications');
     }
-  };
+    return token;
+  }
 
-  const handleNotification = (notification) => {
-    console.log('Notification received:', notification);
-  };
+  const updateNotificationTokenAccountToDb = async (token, id) => {
+    try {
+      const accountRef = doc(db, "accounts", id)
+      await updateDoc(accountRef, {
+        notificationToken: token
+      });
 
-  const handleNotificationResponse = (response) => {
-    console.log('Notification response:', response);
-  };
+      showToast("Token updated to DB", token);
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
 
-  useEffect(() => {
-    loadAccounts();
+   useEffect(() => {
+    registerForPushNotificationsAsync()
+      .then(token => {
+        console.log("token:", token);
+        setExpoPushToken(token)
 
-    registerForPushNotificationsAsync();
-    Notifications.addNotificationReceivedListener(handleNotification);
-    Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
-  }, [user])
+        if (user) {
+          updateNotificationTokenAccountToDb(token, accountDetails?.id);
+        }
 
-  console.log("Snapshot loadAccounts", responders);
-  console.log("Is this current user a responder", isResponder);
+      })
+      .catch(error => console.error(error));
+  }, []) 
 
   return (
     <NavigationContainer>
@@ -134,6 +172,8 @@ const StackNavigator = () => {
                 user={user}
                 setUser={setUser}
                 accountDetails={accountDetails}
+                expoPushToken={expoPushToken}
+                accountId={accountDetails?.id}
               />
             }
           </Stack.Screen>
@@ -166,7 +206,7 @@ const StackNavigator = () => {
             headerTintColor: "white",
           }}
         >
-          {() => <InboxViewDetails  user={user}  accountDetails={accountDetails} />}
+          {() => <InboxViewDetails user={user} accountDetails={accountDetails} />}
         </Stack.Screen>
         <Stack.Screen
           name="Map"
@@ -189,6 +229,7 @@ const StackNavigator = () => {
                   user={user}
                   setUser={setUser}
                   accountDetails={accountDetails}
+                  expoPushToken={expoPushToken}
                 />
               )
               : (
@@ -196,6 +237,8 @@ const StackNavigator = () => {
                   user={user}
                   setUser={setUser}
                   accountDetails={accountDetails}
+                  expoPushToken={expoPushToken}
+                  respondersToken={respondersToken}
                 />
               )
           }
