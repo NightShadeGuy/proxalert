@@ -96,12 +96,12 @@ const EmergencyRequestCard = ({
                     longitude,
                 }
             }, { merge: true });
-            moveToRegion(user.latitude, user.longitude, 0.0922, 0.0421)
+            moveToRegion(user.latitude, user.longitude, 0.0922, 0.0421);
             sendNotification(
                 user.notificationToken,
                 "Your request has been accepted.",
                 `Respondent ${accountDetails.user} is prepared to go to your area.`
-            )
+            );
         } catch (error) {
             console.error(error.message);
         } finally {
@@ -139,7 +139,7 @@ const EmergencyRequestCard = ({
                     }}
                 >
                     <View style={[styles.container, {
-                        height: accountDetails.isResponder ? "55%" : "",
+                        height: accountDetails?.isResponder ? "55%" : "",
                     }]}>
                         <View
                             style={{
@@ -171,7 +171,7 @@ const EmergencyRequestCard = ({
                                     <Feather name="x" size={30} color="black" />
                                 </TouchableOpacity>
                             </View>
-                            {accountDetails.isResponder && (
+                            {accountDetails?.isResponder && (
                                 <View
                                     style={{
                                         flexDirection: "row",
@@ -239,7 +239,7 @@ const EmergencyRequestCard = ({
                                         <Text style={styles.text}> Address: {item.fullAddress} </Text>
                                     </View>
 
-                                    {!accountDetails.isResponder && (
+                                    {!accountDetails?.isResponder && (
                                         <View
                                             style={{
                                                 flexDirection: "row",
@@ -285,7 +285,7 @@ const EmergencyRequestCard = ({
                                         </View>
                                     )}
 
-                                    {accountDetails.isResponder ? (
+                                    {accountDetails?.isResponder ? (
                                         <>
                                             {item.proofPhotoUrl && (
                                                 <>

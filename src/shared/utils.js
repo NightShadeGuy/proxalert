@@ -11,6 +11,7 @@ export const defaultTheme = "#D64045";
 //Database Collection
 export const accountsRef = collection(db, "accounts");
 export const emergencyRequestRef = collection(db, "emergency-request");
+export const messagesRef = collection(db, "messages");
 
 export const loadFonts = () => {
     return useFonts({
@@ -65,12 +66,12 @@ export const showToast = (message1 = "", message2 = "", type = "success") => {
         text2: message2,
         text1Style: {
             fontSize: 15,
-            color: "green"
+            color: type === "success" ? "green" : defaultTheme
         },
         text2Style: {
             fontSize: 11
         },
-        visibilityTime: 4000,
+        visibilityTime: 2000,
         swipeable: true,
         position: "bottom"
     })

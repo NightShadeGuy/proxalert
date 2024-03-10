@@ -1233,6 +1233,7 @@ const MapScreen = ({
           photoUrl={acceptedRequest.responder.photoUrl}
           expoPushToken={expoPushToken}
           responderExpoPushToken={acceptedRequest.responder.notificationToken}
+          acceptedRequest={acceptedRequest}
         />
       )}
 

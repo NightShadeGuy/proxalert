@@ -13,9 +13,11 @@ import { db } from '../config/firebase';
 import {
     MaterialCommunityIcons,
     MaterialIcons,
-    Ionicons
+    Ionicons,
+    AntDesign
 } from '@expo/vector-icons';
 import { updateDoc, doc } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
 const AcceptRequestCard = ({
     name,
@@ -31,8 +33,10 @@ const AcceptRequestCard = ({
     photoUrl,
     setCompletedRequestShowModal,
     expoPushToken,
-    responderExpoPushToken
+    responderExpoPushToken,
+    acceptedRequest
 }) => {
+    const navigation = useNavigation()
 
     const cancelEmergencyRequest = async (docId) => {
         try {
@@ -71,41 +75,47 @@ const AcceptRequestCard = ({
             style={styles.overlayContainer}
             onPress={() => moveCamera(latitude, longitude, 0.0922, 0.0421)}
         >
-            {accountDetails.isResponder ? (
+            {accountDetails?.isResponder ? (
                 <View style={styles.row}>
                     <Image
                         source={{ uri: photoUrl }}
                         style={styles.image}
                     />
-                    <View style={{ flex: 1 }}>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.headerTitle}>{name}</Text>
-                            <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
-                            <Text style={styles.text}>{fullAddress}</Text>
-                        </ScrollView>
-                    </View>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        style={{ flex: 1 }}
+                    >
+                        <Text style={styles.headerTitle}>{name}</Text>
+                        <Text style={styles.text}>{emergencyType} · {contactNumber}</Text>
+                        <Text style={styles.text}>{fullAddress}</Text>
+                    </ScrollView>
                     <View>
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <TouchableOpacity
-                                style={[styles.button, { marginTop: 5 }]}
+                                style={[styles.button, styles.buttonBorder, { borderColor: "gray" }]}
                                 onPress={() => cancelEmergencyRequest(documentId)}
                             >
                                 <MaterialCommunityIcons name="cancel" size={24} color="red" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
+                                style={[styles.button, styles.buttonBorder]}
+                                onPress={() => Linking.openURL(`tel:${contactNumber}`)}
+                            >
+                                <Ionicons name="call-sharp" size={24} color="#228353" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonBorder]}
+                                onPress={() => navigation.navigate("Chat", acceptedRequest)}
+                            >
+                                <AntDesign name="message1" size={20} color="#228353" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonBorder, { backgroundColor: "#4caf50", marginTop: 5 }]}
                                 onPress={() => handleCompletedShowModal(documentId)}
                             >
                                 <MaterialIcons name="done" size={24} color="white" />
-
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
-                                onPress={() => Linking.openURL(`tel:${contactNumber}`)}
-                            >
-                                <Ionicons name="call-sharp" size={24} color="white" />
 
-                            </TouchableOpacity>
                         </ScrollView>
                     </View>
                 </View>
@@ -115,24 +125,33 @@ const AcceptRequestCard = ({
                         source={{ uri: photoUrl }}
                         style={styles.image}
                     />
-                    <View style={{ flex: 1 }}>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        style={{ flex: 1 }}
+                    >
                         <Text style={styles.headerTitle}>Responder: {name}</Text>
                         <Text style={styles.text}>{contactNumber}</Text>
-                    </View>
+                    </ScrollView>
                     <View style={{ rowGap: 10 }}>
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <TouchableOpacity
-                                style={[styles.button, { marginTop: 5 }]}
+                                style={[styles.button, styles.buttonBorder, { borderColor: "gray" }]}
                                 onPress={() => cancelEmergencyRequest(documentId)}
                             >
                                 <MaterialCommunityIcons name="cancel" size={24} color="red" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.button, { backgroundColor: "#4caf50", marginTop: 5 }]}
+                                style={[styles.button, styles.buttonBorder]}
                                 onPress={() => Linking.openURL(`tel:${contactNumber}`)}
                             >
-                                <Ionicons name="call-sharp" size={24} color="white" />
+                                <Ionicons name="call-sharp" size={24} color="#228353" />
 
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonBorder]}
+                                onPress={() => navigation.navigate("Chat", acceptedRequest)}
+                            >
+                                <AntDesign name="message1" size={20} color="#228353" />
                             </TouchableOpacity>
                         </ScrollView>
                     </View>
@@ -184,5 +203,11 @@ const styles = StyleSheet.create({
         borderRadius: 25,
         justifyContent: "center",
         alignItems: "center",
+    },
+    buttonBorder: {
+        backgroundColor: "white",
+        marginTop: 5,
+        borderWidth: 2,
+        borderColor: "#228353"
     }
 })

@@ -109,7 +109,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
 
                 <View style={{ alignItems: "center", paddingTop: 20 }}>
                     <Image
-                        source={{ uri: accountDetails.isResponder ? photoUrl : responder.photoUrl }}
+                        source={{ uri: accountDetails?.isResponder ? photoUrl : responder.photoUrl }}
                         style={{
                             width: 80,
                             height: 80,
@@ -117,11 +117,11 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                             alignItems: "center"
                         }}
                     />
-                    {!accountDetails.isResponder && (
+                    {!accountDetails?.isResponder && (
                         <Text style={styles.textDetails}>Responder: {responder.name}</Text>
                     )}
                     <Text style={[styles.textTitle, { textAlign: "center" }]}>
-                        {accountDetails.isResponder
+                        {accountDetails?.isResponder
                             ? `My emergency response for ${name}`
                             : `Congratulations!, ${responder.name} completed your request`
                         }
@@ -150,7 +150,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                 longitudeDelta,
                                 altitude: 0
                             }}
-                            title={`Me: ${name}`}
+                            title={name}
                         >
                             {user.photoURL ? (
                                 <Image
@@ -180,7 +180,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                 longitudeDelta,
                                 altitude: 0
                             }}
-                            title={`Responder: ${responder.name}`}
+                            title={responder.name}
                         >
                             {user.photoURL ? (
                                 <Image
@@ -207,7 +207,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
 
 
                 <Text style={styles.textDetails}>
-                    {accountDetails.isResponder ? "User Details" : "My Details"}
+                    {accountDetails?.isResponder ? "User Details" : "My Details"}
                 </Text>
                 <View style={{ paddingHorizontal: 10 }}>
                     {name && (<Text style={styles.text}>Name: {name}</Text>)}
@@ -222,7 +222,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                 {proofPhotoUrl && (
                     <View>
                         <Text style={styles.textDetails}>
-                            {accountDetails.isResponder ? "Proof Image Attached" : "View my uploaded Image"}
+                            {accountDetails?.isResponder ? "Proof Image Attached" : "View my uploaded Image"}
                         </Text>
 
                         <View style={{ position: "relative" }} >

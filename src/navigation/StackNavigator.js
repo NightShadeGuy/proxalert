@@ -20,6 +20,7 @@ import {
 import { accountsRef, showToast } from "../shared/utils";
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import ChatScreen from "../screens/ChatScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -56,7 +57,7 @@ const StackNavigator = () => {
           { ...doc.data(), id: doc.id }
         ))
         setAllAccounts(accounts);
-        
+
         const responderAccount = accounts.filter(account => account.isResponder === true);
         const responderToken = responderAccount.map(prevAccount => prevAccount.notificationToken);
         setRespondersToken(responderToken);
@@ -140,7 +141,7 @@ const StackNavigator = () => {
     }
   }
 
-   useEffect(() => {
+  useEffect(() => {
     registerForPushNotificationsAsync()
       .then(token => {
         console.log("token:", token);
@@ -152,7 +153,7 @@ const StackNavigator = () => {
 
       })
       .catch(error => console.error(error));
-  }, []) 
+  }, [])
 
   return (
     <NavigationContainer>
@@ -242,6 +243,9 @@ const StackNavigator = () => {
                 />
               )
           }
+        </Stack.Screen>
+        <Stack.Screen name="Chat">
+          {() => <ChatScreen user={user} accountDetails={accountDetails} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

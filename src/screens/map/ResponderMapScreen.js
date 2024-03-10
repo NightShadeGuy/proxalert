@@ -925,6 +925,7 @@ const ResponderMapScreen = ({
                     setCompletedRequestShowModal={setCompletedRequestShowModal}
                     expoPushToken={expoPushToken}
                     responderExpoPushToken={acceptedRequest.notificationToken}
+                    acceptedRequest={acceptedRequest}
                 />
             )}
 
