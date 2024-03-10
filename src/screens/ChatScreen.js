@@ -142,7 +142,7 @@ const ChatScreen = ({ user, accountDetails }) => {
                 { ...doc.data(), id: doc.id }
             ))
             setAllMessages(messages);
-            console.log("Chat messages", messages);
+            console.log("ChatScreen messages", messages);
         })
     }
 

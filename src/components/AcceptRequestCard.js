@@ -7,8 +7,12 @@ import {
     Linking,
     ScrollView
 } from 'react-native'
-import React from 'react'
-import { defaultTheme, sendNotification } from '../shared/utils'
+import React, { useState, useEffect } from 'react'
+import {
+    defaultTheme,
+    sendNotification,
+    messagesRef
+} from '../shared/utils'
 import { db } from '../config/firebase';
 import {
     MaterialCommunityIcons,
@@ -16,7 +20,15 @@ import {
     Ionicons,
     AntDesign
 } from '@expo/vector-icons';
-import { updateDoc, doc } from 'firebase/firestore';
+import {
+    updateDoc,
+    deleteDoc,
+    doc,
+    query,
+    where,
+    orderBy,
+    onSnapshot
+} from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
 const AcceptRequestCard = ({
@@ -37,6 +49,7 @@ const AcceptRequestCard = ({
     acceptedRequest
 }) => {
     const navigation = useNavigation()
+    const [allMessages, setAllMessages] = useState();
 
     const cancelEmergencyRequest = async (docId) => {
         try {
@@ -50,6 +63,7 @@ const AcceptRequestCard = ({
             });
 
             sendNotification([expoPushToken, responderExpoPushToken], "Request Got Cancelled", "");
+            deleteMessages();
             console.log("Cancel request successfully to DB");
         } catch (error) {
             console.error(error.message);
@@ -62,10 +76,45 @@ const AcceptRequestCard = ({
             await updateDoc(emergencyRequest, {
                 showCompletedModal: true
             })
+            deleteMessages();
 
             setCompletedRequestShowModal(true);
         } catch (error) {
             console.error(error.message);
+        }
+    }
+
+
+    const loadMessages = async () => {
+        const q = query(messagesRef,
+            where("senderUid", "in", [acceptedRequest.uid, acceptedRequest.responderUid]),
+            orderBy("createdAt", "asc")
+        )
+
+        onSnapshot(q, (querySnapshot) => {
+            const messages = querySnapshot.docs.map(doc => (
+                { ...doc.data(), id: doc.id }
+            ))
+            setAllMessages(messages);
+            console.log("AcceptRequestCard messages", messages);
+        })
+    }
+
+    useEffect(() => {
+        loadMessages();
+    }, [])
+
+    const deleteMessages = async () => {
+        try {
+            if (allMessages.length > 0) {
+                for (let message of allMessages) {
+                    await deleteDoc(doc(messagesRef, message.id));
+                    //console.log("Should be delete", message);
+                }
+                console.log("Conversation Deleted Successfully");
+            }
+        } catch (err) {
+            console.error(err.message)
         }
     }
 
