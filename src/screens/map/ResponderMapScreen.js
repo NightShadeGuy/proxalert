@@ -717,7 +717,7 @@ const ResponderMapScreen = ({
                     }}
                 >
                     <TextInput
-                        placeholder='Search'
+                        placeholder='Search destination'
                         value={search}
                         onChangeText={onChangeText}
                         style={styles.input}

@@ -27,6 +27,8 @@ import MapView, {
     PROVIDER_GOOGLE
 } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { storage } from '../../config/firebase';
+import { ref, deleteObject } from 'firebase/storage';
 
 const InboxViewDetails = ({ user, accountDetails }) => {
     const navigation = useNavigation();
@@ -62,6 +64,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
         setShowDeleteMessage(false);
         try {
             await deleteDoc(doc(emergencyRequestRef, id));
+            await deleteImageFromStorage(proofPhotoUrl);
         } catch (err) {
             toast(err.message);
         } finally {
@@ -69,6 +72,19 @@ const InboxViewDetails = ({ user, accountDetails }) => {
             navigation.navigate("Inbox");
         }
     }
+
+    const deleteImageFromStorage = async (imageUrl) => {
+        if (!imageUrl) return;
+
+        const imageRef = ref(storage, imageUrl);
+
+        try {
+            await deleteObject(imageRef);
+            console.log('Image deleted successfully');
+        } catch (error) {
+            console.error('Error deleting image:', error.message);
+        }
+    };
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -222,7 +238,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                 {proofPhotoUrl && (
                     <View>
                         <Text style={styles.textDetails}>
-                            {accountDetails?.isResponder ? "Proof Image Attached" : "View my uploaded Image"}
+                            {accountDetails?.isResponder ? "Proof Image Attached" : "My Uploaded Image"}
                         </Text>
 
                         <View style={{ position: "relative" }} >
