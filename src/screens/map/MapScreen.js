@@ -239,7 +239,6 @@ const MapScreen = ({
 
         console.log("Document written:", docRef.id);
         setIsSaved(true);
-        setShowRequestModal(true); // state for emergency request modal
 
         sendNotification(
           respondersToken,
@@ -247,7 +246,7 @@ const MapScreen = ({
           `The sort of emergency is ${selectEmergencyType}.`
         )
       } else {
-        toast("You need select your emergency type and your location");
+        toast("You need to select your emergency type and your location");
       }
     } catch (error) {
       toast(error.message);
@@ -256,6 +255,11 @@ const MapScreen = ({
       setTimeout(() => {
         setIsSaved(false);
         setModalVisible(false);
+
+        if (selectEmergencyType && reportLocation) {
+          setShowRequestModal(true); // state for emergency request modal
+        }
+
         setSelectEmergencyType(null);
         setImage(null);
       }, 1000)
@@ -1071,7 +1075,7 @@ const MapScreen = ({
             </Text>
 
 
-            <View style={{ height: 80, paddingHorizontal: 20 }}>
+            <View style={{ height: 80, paddingHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
               <FlatList
                 data={emergencyTypes}
                 horizontal

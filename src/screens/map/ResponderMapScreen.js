@@ -593,14 +593,22 @@ const ResponderMapScreen = ({
                         title={`Name: ${acceptedRequest.user}`}
                         description={`Emergency type: ${acceptedRequest.emergencyType}`}
                     >
-                        <Image
-                            source={{ uri: acceptedRequest.photoUrl }}
-                            style={{
-                                height: 40,
-                                width: 40,
-                                borderRadius: 20,
-                            }}
-                        />
+                        {acceptedRequest.photoUrl ? (
+                            <Image
+                                source={{ uri: acceptedRequest.photoUrl }}
+                                style={{
+                                    height: 40,
+                                    width: 40,
+                                    borderRadius: 20,
+                                }}
+                            />
+                        ) : (
+                            <MaterialCommunityIcons
+                                name="human-handsup"
+                                size={40}
+                                color="green"
+                            />
+                        )}
                     </Marker>
                 )}
 

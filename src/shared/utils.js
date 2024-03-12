@@ -8,6 +8,8 @@ import Toast from 'react-native-toast-message';
 //Colors 
 export const defaultTheme = "#D64045";
 
+export const defaultPhoto = "https://i.pinimg.com/564x/05/11/45/051145a8e366876f859378154aa7df8b.jpg";
+
 //Database Collection
 export const accountsRef = collection(db, "accounts");
 export const emergencyRequestRef = collection(db, "emergency-request");

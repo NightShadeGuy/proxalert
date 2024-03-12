@@ -17,6 +17,7 @@ import React, {
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons';
 import {
+    defaultPhoto,
     defaultTheme,
     messagesRef,
     sendNotification,
@@ -80,7 +81,7 @@ const ChatScreen = ({ user, accountDetails }) => {
                                 <Ionicons name="arrow-back-outline" size={24} color="white" />
                             </TouchableOpacity>
                             <Image
-                                source={{ uri: photoUrl }}
+                                source={{ uri: (photoUrl || defaultPhoto) }}
                                 style={styles.headerImage}
                             />
                             <Text style={styles.headerNameText}>{name}</Text>
@@ -228,7 +229,7 @@ const ChatScreen = ({ user, accountDetails }) => {
                         }}
                     >
                         <Image
-                            source={{ uri: accountDetails?.isResponder ? photoUrl : responder.photoUrl }}
+                            source={{ uri: accountDetails?.isResponder ? (photoUrl || defaultPhoto) : (responder.photoUrl || defaultPhoto) }}
                             style={{ width: 100, height: 100, borderRadius: 50 }}
                         />
                         <Text style={styles.emptyText}>{accountDetails?.isResponder ? name : responder.name}</Text>

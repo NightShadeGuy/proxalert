@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { loadFonts, showToast } from "../shared/utils";
+import { defaultPhoto, loadFonts, showToast } from "../shared/utils";
 import { updateDoc, doc } from "firebase/firestore"
 import { db } from '../config/firebase';
 
@@ -93,30 +93,22 @@ const HomeScreen = ({
           >
             {user?.displayName ? `Hello, ${user?.displayName}!` : "Hey, User!"}
           </Text>
-          {user.photoURL ? (
-            <TouchableOpacity
-              style={profile}
-              onPress={() => navigation.navigate("Settings", {
-                profilePicture: user.photoURL,
-              })}
-            >
-              <Image
-                source={{ uri: user.photoURL }}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                }}
-              />
-            </TouchableOpacity>
-          ) : (
-            <FontAwesome
-              name="gear"
-              size={24}
-              color="#D64045"
-              onPress={() => navigation.navigate("Settings")}
+
+          <TouchableOpacity
+            style={profile}
+            onPress={() => navigation.navigate("Settings", {
+              profilePicture: user.photoURL ? user.photoURL : defaultPhoto
+            })}
+          >
+            <Image
+              source={{ uri: user.photoURL ? user.photoURL : defaultPhoto }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+              }}
             />
-          )}
+          </TouchableOpacity>
         </View>
 
         {user.emailVerified && (

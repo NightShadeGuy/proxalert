@@ -223,12 +223,10 @@ const EmergencyRequestCard = ({
                                     <View>
                                         <Text style={[styles.text, { textAlign: "right", color: "silver" }]}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
                                         <View style={styles.row}>
-                                            {item.photoUrl && (
-                                                <Image
-                                                    source={{ uri: item.photoUrl }}
-                                                    style={{ width: 50, height: 50, borderRadius: 25, marginHorizontal: 20 }}
-                                                />
-                                            )}
+                                            <Image
+                                                source={{ uri: item.photoUrl ? item.photoUrl : "https://i.pinimg.com/564x/05/11/45/051145a8e366876f859378154aa7df8b.jpg" }}
+                                                style={{ width: 50, height: 50, borderRadius: 25, marginHorizontal: 20 }}
+                                            />
                                             <View>
                                                 <Text style={styles.text}> Name: {item.user} </Text>
                                                 <Text style={styles.text}>Contact number: {item.contactNumber}</Text>

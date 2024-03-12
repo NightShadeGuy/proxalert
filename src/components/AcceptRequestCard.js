@@ -11,7 +11,8 @@ import React, { useState, useEffect } from 'react'
 import {
     defaultTheme,
     sendNotification,
-    messagesRef
+    messagesRef,
+    defaultPhoto
 } from '../shared/utils'
 import { db } from '../config/firebase';
 import {
@@ -127,7 +128,7 @@ const AcceptRequestCard = ({
             {accountDetails?.isResponder ? (
                 <View style={styles.row}>
                     <Image
-                        source={{ uri: photoUrl }}
+                        source={{ uri: photoUrl ? photoUrl : defaultPhoto }}
                         style={styles.image}
                     />
                     <ScrollView
