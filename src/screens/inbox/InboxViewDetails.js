@@ -18,7 +18,7 @@ import {
 import moment from "moment";
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CustomButton from '../../components/CustomButton';
-import { emergencyRequestRef, toast } from '../../shared/utils';
+import { defaultPhoto, emergencyRequestRef, toast } from '../../shared/utils';
 import { doc, deleteDoc } from "firebase/firestore";
 import StatusModal from "../../components/StatusModal";
 import MapView, {
@@ -125,7 +125,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
 
                 <View style={{ alignItems: "center", paddingTop: 20 }}>
                     <Image
-                        source={{ uri: accountDetails?.isResponder ? photoUrl : responder.photoUrl }}
+                        source={{ uri: accountDetails?.isResponder ? (photoUrl || defaultPhoto) : (responder.photoUrl || defaultPhoto) }}
                         style={{
                             width: 80,
                             height: 80,
@@ -168,7 +168,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                             }}
                             title={name}
                         >
-                            {user.photoURL ? (
+                            {user.photoURL && (
                                 <Image
                                     source={{ uri: photoUrl }}
                                     style={{
@@ -177,7 +177,9 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                         borderRadius: 20,
                                     }}
                                 />
-                            ) : (
+                            )}
+
+                            {!photoUrl && (
                                 <MaterialCommunityIcons
                                     name="human-handsup"
                                     size={40}
@@ -209,7 +211,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                 />
                             ) : (
                                 <Image
-                                    source={{ uri: "https://i.pinimg.com/564x/6e/85/40/6e85408d47cd78ba6cd3d3a188035795.jpg" }}
+                                    source={{ uri: "https://i.pinimg.com/564x/c2/c9/94/c2c994ac29361808c93c913338ad69b3.jpg" }}
                                     style={{
                                         height: 40,
                                         width: 40,

@@ -1,4 +1,8 @@
-import React, { useLayoutEffect, useState, useEffect } from 'react';
+import React, {
+  useLayoutEffect,
+  useState,
+  useEffect
+} from 'react';
 import {
   StyleSheet,
   Text,
@@ -62,14 +66,16 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
         </TouchableOpacity>
       )
     })
+
+    console.log("USeLayout effect run");
   }, [])
 
   const [showInfo, setShowInfo] = useState(false);
   const [showChangePass, setShowChangePass] = useState(false);
 
-  const [username, setUsername] = useState(user?.displayName);
-  const [photoUrl, setPhotoUrl] = useState(user?.photoURL);
-  const [phoneNumber, setPhoneNumber] = useState(accountDetails?.contactNumber);
+  const [username, setUsername] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
@@ -136,11 +142,22 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
     try {
       await signOut(auth);
       setUser(null);
+      setUsername("");
+      setPhotoUrl("");
+      setPhoneNumber("");
       navigation.navigate("Get Started");
     } catch (err) {
       ToastAndroid.showWithGravity(err.message, 300, ToastAndroid.TOP);
     }
   }
+
+  useEffect(() => {
+    setUsername(user?.displayName);
+    setPhotoUrl(user?.photoURL);
+    setPhoneNumber(accountDetails?.contactNumber);
+    console.log("Settings screen effect run");
+  }, [user, accountDetails])
+
 
   return (
     <View style={container}>

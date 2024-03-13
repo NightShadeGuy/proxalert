@@ -92,7 +92,7 @@ const ChatScreen = ({ user, accountDetails }) => {
                                 <Ionicons name="arrow-back-outline" size={24} color="white" />
                             </TouchableOpacity>
                             <Image
-                                source={{ uri: responder.photoUrl }}
+                                source={{ uri: (responder.photoUrl || defaultPhoto) }}
                                 style={styles.headerImage}
                             />
                             <Text style={styles.headerNameText}>{responder.name}</Text>

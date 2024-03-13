@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import React, { useState } from 'react'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import { calendarFormat} from '../shared/utils';
+import { calendarFormat, defaultPhoto } from '../shared/utils';
 
 const Chat = ({
     user,
@@ -39,7 +39,7 @@ const Chat = ({
 
                 {user.uid !== item.senderUid && (
                     <Image
-                        source={{ uri: item.senderPhotoUrl }}
+                        source={{ uri: (item.senderPhotoUrl || defaultPhoto) }}
                         style={styles.profile}
                     />
                 )}

@@ -2,7 +2,7 @@ import { View, Text, Modal, StyleSheet, Image, TouchableOpacity } from 'react-na
 import React from 'react'
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from '../config/firebase';
-import { defaultTheme } from '../shared/utils';
+import { defaultPhoto, defaultTheme } from '../shared/utils';
 
 const CompletedRequestModal = ({
     showModal,
@@ -48,7 +48,7 @@ const CompletedRequestModal = ({
                             />
                             <View style={{ alignItems: 'center', rowGap: 10 }} >
                                 <Image
-                                    source={{ uri: photoUrl }}
+                                    source={{ uri: (photoUrl || defaultPhoto) }}
                                     style={styles.userProfile}
                                 />
                                 <Text style={[styles.text, { fontSize: 20, color: defaultTheme }]}>{name}</Text>
@@ -65,7 +65,7 @@ const CompletedRequestModal = ({
                             />
                             <View style={{ alignItems: 'center', rowGap: 10 }} >
                                 <Image
-                                    source={{ uri: photoUrl }}
+                                    source={{ uri: (photoUrl || defaultPhoto) }}
                                     style={styles.userProfile}
                                 />
                                 <Text style={[styles.text, { fontSize: 20, color: defaultTheme }]}>{name}</Text>
@@ -76,7 +76,7 @@ const CompletedRequestModal = ({
                     )}
                     <TouchableOpacity
                         activeOpacity={0.6}
-                        style={{ height: 100 }}
+                        style={{ height: 100, paddingHorizontal: 20 }}
                         onPress={() => completedEmergencyRequest(documentId)}
                     >
                         <Text style={[styles.button, styles.buttontext]}>Continue</Text>

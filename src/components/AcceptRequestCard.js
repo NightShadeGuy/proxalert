@@ -172,7 +172,7 @@ const AcceptRequestCard = ({
             ) : (
                 <View style={styles.row}>
                     <Image
-                        source={{ uri: photoUrl }}
+                       source={{ uri: photoUrl ? photoUrl : defaultPhoto }}
                         style={styles.image}
                     />
                     <ScrollView
