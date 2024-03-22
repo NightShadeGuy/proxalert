@@ -4,8 +4,8 @@ import {
   Text,
   View,
   TextInput,
-  Pressable,
   TouchableOpacity,
+  Image
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
@@ -22,12 +22,12 @@ import { Octicons } from '@expo/vector-icons';
 import {
   accountsRef,
   defaultTheme,
+  showToast,
   toast
 } from "../shared/utils";
 
 const RegisterScreen = ({ user, setUser }) => {
   const {
-    container,
     headerText,
     row,
     text,
@@ -46,6 +46,7 @@ const RegisterScreen = ({ user, setUser }) => {
   const [photoUrl, setPhotoUrl] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+  const [selectTypeResponder, setSelectTypeResponder] = useState(null);
   const [registerAsResponder, setRegisterAsResponder] = useState(false);
   const [loading, setLoading] = useState(false)
 
@@ -57,7 +58,7 @@ const RegisterScreen = ({ user, setUser }) => {
         await logInForASeconds();
         navigation.navigate("Login");
 
-        toast("You can now login your account");
+        showToast("You successfully created an account.");
       } else {
         alert("Password doesn't match")
       }
@@ -79,6 +80,7 @@ const RegisterScreen = ({ user, setUser }) => {
       console.log("logInForASeconds", docs.user);
     } catch (err) {
       console.error(err.message);
+      showToast("Error", err.message, "error");
     } finally {
       signOut(auth);
     }
@@ -86,13 +88,14 @@ const RegisterScreen = ({ user, setUser }) => {
 
   const updateUserInfo = async () => {
     try {
-      await updateProfile(auth.currentUser, { 
+      await updateProfile(auth.currentUser, {
         displayName: name,
         photoURL: photoUrl
-       });
+      });
       console.log("update profile sucessfully");
     } catch (error) {
       console.error(error.message);
+      showToast("Error", error.message, "error");
     }
   }
 
@@ -103,11 +106,13 @@ const RegisterScreen = ({ user, setUser }) => {
         uid: user.uid,
         contactNumber: phone,
         createAt: serverTimestamp(),
-        isResponder: registerAsResponder
+        isResponder: registerAsResponder,
+        sortResponder: registerAsResponder ? selectTypeResponder : null
       })
       console.log("New account has been uploaded to db", docRef.id);
     } catch (error) {
       console.error(error.message);
+      showToast("Error", error.message, "error");
     }
   }
 
@@ -204,16 +209,70 @@ const RegisterScreen = ({ user, setUser }) => {
               columnGap: 5,
               paddingHorizontal: 20,
             }}
-            onPress={() => setRegisterAsResponder(!registerAsResponder)}
+            onPress={() => {
+              setRegisterAsResponder(!registerAsResponder)
+              setSelectTypeResponder(null);
+            }}
           >
             <Octicons
               name={registerAsResponder ? "dot-fill" : "dot"}
               size={40}
               color={registerAsResponder ? defaultTheme : "gray"}
             />
-            <Text style={font}>Do you want to register as responder?</Text>
+            <Text style={font}>Would you like to register as a responder?</Text>
           </TouchableOpacity>
         </View>
+
+        {registerAsResponder && (
+          <>
+            <Text style={[font, { color: "gray" }]}>What sort of responder are you?</Text>
+            <ScrollView
+              style={{ marginVertical: 20 }}
+              contentContainerStyle={{ flexDirection: "row", columnGap: 10 }}
+              showsHorizontalScrollIndicator={false}
+            >
+              <TouchableOpacity
+                style={[styles.card, {
+                  backgroundColor: selectTypeResponder === "Medical" ? "#E0E0E0" : "transparent",
+                  opacity: selectTypeResponder === "Medical" ? 1 : 0.5
+                }]}
+                onPress={() => setSelectTypeResponder("Medical")}
+              >
+                <Image
+                  source={require("../.././assets/images/nurse.png")}
+                  style={styles.responderImage}
+                />
+                <Text style={[font, { color: "gray" }]}>Medical</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.card, {
+                  backgroundColor: selectTypeResponder === "Police" ? "#E0E0E0" : "transparent",
+                  opacity: selectTypeResponder === "Police" ? 1 : 0.5
+                }]}
+                onPress={() => setSelectTypeResponder("Police")}
+              >
+                <Image
+                  source={require("../.././assets/images/policeman.png")}
+                  style={styles.responderImage}
+                />
+                <Text style={[font, { color: "gray" }]}>Police</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.card, {
+                  backgroundColor: selectTypeResponder === "Fire fighter" ? "#E0E0E0" : "transparent",
+                  opacity: selectTypeResponder === "Fire fighter" ? 1 : 0.5
+                }]}
+                onPress={() => setSelectTypeResponder("Fire fighter")}
+              >
+                <Image
+                  source={require("../.././assets/images/firefighter.png")}
+                  style={styles.responderImage}
+                />
+                <Text style={[font, { color: "gray" }]}>Fire Fighter</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </>
+        )}
 
         <CustomButton
           title="Register"
@@ -225,7 +284,11 @@ const RegisterScreen = ({ user, setUser }) => {
         />
         <TouchableOpacity
           activeOpacity={0.5}
-          onPress={() => navigation.navigate("Login")}
+          onPress={() => {
+            setRegisterAsResponder(false);
+            setSelectTypeResponder(null);
+            navigation.navigate("Login")
+          }}
         >
           <Text
             style={[text, font, {
@@ -245,10 +308,6 @@ const RegisterScreen = ({ user, setUser }) => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -294,6 +353,17 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginTop: 10
   },
+  card: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderRadius: 10
+  },
+  responderImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50
+  }
 })
 
 export default RegisterScreen;

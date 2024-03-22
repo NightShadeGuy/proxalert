@@ -38,6 +38,7 @@ import {
     toast,
     defaultTheme,
     emergencyRequestRef,
+    useDefaultPhoto,
 } from '../../shared/utils';
 import {
     AntDesign,
@@ -303,7 +304,7 @@ const ResponderMapScreen = ({
             }));
             setDecodedCoordinates(decodedCoords);
 
-            /*   const sampleCoordinates = [  //Here's is a sample data of the end result decodedCoordinates
+            /*   const sampleCoordinates = [  //Here's a sample data of the end result decodedCoordinates
               { latitude: 14.76911, longitude: 121.03853 },
               { latitude: 14.76912, longitude: 121.03841 },
               { latitude: 14.76912, longitude: 121.03791 },
@@ -320,15 +321,6 @@ const ResponderMapScreen = ({
         }
     }
 
-    /*   const updateRoute = () => {
-        const direction = [...decodedCoordinates];
-        direction.shift();
-        setDecodedCoordinates(direction);
-        console.log("references", direction);
-      }
-     */
-
-
     // Function to calculate distance between two points
     function distance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Radius of the earth in km
@@ -342,8 +334,6 @@ const ResponderMapScreen = ({
 
         return R * c;
     }
-
-
 
     const updateRoute = (myLatitude, myLongitude) => {
         console.log("UpdateRoute current loc latitude:", myLatitude, " longitude:", myLongitude);
@@ -411,7 +401,7 @@ const ResponderMapScreen = ({
                     longitude: longitude
                 },
                 pitch: 90,
-                heading: 90,
+                heading: 0,
                 altitude: 20,
                 zoom: 20
             },
@@ -445,6 +435,7 @@ const ResponderMapScreen = ({
     const loadEmergencyRequest = async () => {
         const q = query(emergencyRequestRef,
             where("emergencyStatus", "==", "waiting"),
+            where("requestedResponder", "==", accountDetails.sortResponder),
             orderBy("createdAt", "asc")
         );
 
@@ -500,7 +491,7 @@ const ResponderMapScreen = ({
                 initialRegion={region}
                 provider={PROVIDER_GOOGLE}
                 showsUserLocation
-            //followsUserLocation
+                followsUserLocation
             //showsTraffic
             >
 
@@ -521,7 +512,7 @@ const ResponderMapScreen = ({
                             />
                         ) : (
                             <Image
-                                source={{ uri: "https://i.pinimg.com/564x/6e/85/40/6e85408d47cd78ba6cd3d3a188035795.jpg" }}
+                                source={{ uri: useDefaultPhoto(accountDetails.isResponder, accountDetails.sortResponder).vehicleIcon }}
                                 style={{
                                     height: 40,
                                     width: 40,
@@ -673,12 +664,18 @@ const ResponderMapScreen = ({
                     paddingHorizontal: 10,
                     backgroundColor: !newCoordinates ? "rgb(240, 240, 240)" : "white"
                 }]}
-                onPress={() => createRoute(
-                    region.latitude,
-                    region.longitude,
-                    newCoordinates.latitude,
-                    newCoordinates.longitude
-                )}
+                onPress={() => {
+                    const start = async () => {
+                        await createRoute(
+                            region.latitude,
+                            region.longitude,
+                            newCoordinates.latitude,
+                            newCoordinates.longitude
+                        )
+                        moveCamera(region.latitude, region.longitude);
+                    }
+                    start();
+                }}
                 disabled={!newCoordinates}
             >
                 <FontAwesome5
@@ -711,6 +708,8 @@ const ResponderMapScreen = ({
                 maxHeight: search.length > 8 ? 200 : 50,
                 paddingVertical: 5,
                 borderRadius: 20,
+                borderBottomLeftRadius: search.length > 8 ? 8 : 20,
+                borderBottomRightRadius: search.length > 8 ? 8 : 20,
                 shadowColor: "#000",
                 shadowRadius: 5,
                 shadowOpacity: 0.25,
@@ -770,7 +769,6 @@ const ResponderMapScreen = ({
                                     0.0922,
                                     0.0421
                                 );
-                                //Alert.alert(item.type, `${item.display_name}`);
                             }}
                         >
                             <FontAwesome5
@@ -789,17 +787,20 @@ const ResponderMapScreen = ({
                 />
             </View>
 
-            {/* Temporary display the data after fetching the location */}
             {showProfileDetails && (
-                <View style={styles.overlayContainer}>
+                <View
+                    style={[styles.overlayContainer, {
+                        bottom: acceptedRequest ? 120 : 90,
+                    }]}
+                >
                     <ScrollView
                         style={{ height: 100 }}
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Checking to see if the data changes when the user is moving */}
+                        <Text style={[styles.overlayButtonText, styles.details]}>Current Details</Text>
                         <Text style={styles.overlayButtonText}>Latitude: {region.latitude}</Text>
                         <Text style={styles.overlayButtonText}>Longitude: {region.longitude}</Text>
-                        <Text style={styles.overlayButtonText}>Routes: {decodedCoordinates.length}</Text>
+                        {/*  <Text style={styles.overlayButtonText}>Routes: {decodedCoordinates.length}</Text> */}
 
                         <Text style={styles.overlayButtonText}>Country: {details?.country}</Text>
                         <Text style={styles.overlayButtonText}>Country Code: {details?.isoCountryCode}</Text>
@@ -879,7 +880,6 @@ const ResponderMapScreen = ({
                             )}
                         />
                     </View>
-
                 </Pressable>
             </Modal >
 
@@ -972,9 +972,16 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     overlayButtonText: {
-        color: "green",
+        color: "gray",
         fontSize: 12,
         fontFamily: "NotoSans-SemiBold"
+    },
+    details: {
+        fontSize: 14,
+        borderBottomWidth: 1,
+        borderColor: "silver",
+        color: defaultTheme,
+        fontFamily: "NotoSans-Bold"
     },
     input: {
         height: 40,
@@ -1045,7 +1052,6 @@ const styles = StyleSheet.create({
         maxWidth: 150,
         textAlign: "center"
     }
-
 })
 
 export default ResponderMapScreen;

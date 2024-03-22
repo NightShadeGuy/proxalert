@@ -86,6 +86,7 @@ const InboxScreen = ({ user, accountDetails }) => {
                                 name: item.user,
                                 id: item.id,
                                 address: item.address,
+                                fullAddress: item.fullAddress,
                                 createdAt: item.createdAt,
                                 emergencyType: item.emergencyType,
                                 latitude: item.latitude,

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,21 +6,20 @@ import {
   Image,
   Pressable,
   Animated,
-  TouchableOpacity,
-  TouchableHighlight,
+  TouchableOpacity
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { defaultPhoto, loadFonts, showToast } from "../shared/utils";
-import { updateDoc, doc } from "firebase/firestore"
-import { db } from '../config/firebase';
-
+import { MaterialIcons } from '@expo/vector-icons';
+import {
+  defaultPhoto,
+  loadFonts,
+  useDefaultPhoto
+} from "../shared/utils";
 
 const HomeScreen = ({
   user,
   setUser,
-  expoPushToken,
-  accountId
+  accountDetails
 }) => {
   const navigation = useNavigation();
   const [fontsLoaded] = loadFonts();
@@ -57,23 +56,6 @@ const HomeScreen = ({
     }).start();
   };
 
-  const updateNotificationTokenAccountToDb = async (token, id) => {
-    setLoading(true);
-    try {
-      const accountRef = doc(db, "accounts", id)
-      await updateDoc(accountRef, {
-        notificationToken: token
-      });
-
-      showToast("Successfully updated token to DB", token);
-    } catch (err) {
-      console.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-
   if (!fontsLoaded) {
     return null
   }
@@ -83,13 +65,10 @@ const HomeScreen = ({
       <View style={section}>
         <View style={sameRow}>
           <Text
-            style={[
-              headerColor,
-              {
-                fontSize: 24,
-                fontFamily: "NotoSans-Bold"
-              }
-            ]}
+            style={[headerColor, {
+              fontSize: 19,
+              fontFamily: "NotoSans-Bold"
+            }]}
           >
             {user?.displayName ? `Hello, ${user?.displayName}!` : "Hey, User!"}
           </Text>
@@ -100,14 +79,17 @@ const HomeScreen = ({
               profilePicture: user.photoURL ? user.photoURL : defaultPhoto
             })}
           >
-            <Image
-              source={{ uri: user.photoURL ? user.photoURL : defaultPhoto }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-              }}
-            />
+            {user?.photoURL ? (
+              <Image
+                source={{ uri: user.photoURL }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <Image
+                source={{ uri: useDefaultPhoto(accountDetails?.isResponder, accountDetails?.sortResponder).photo }}
+                style={styles.profileImage}
+              />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -123,13 +105,10 @@ const HomeScreen = ({
         )}
 
         <Text
-          style={[
-            headerColor,
-            {
-              fontSize: 18,
-              fontFamily: "NotoSans-Medium"
-            }
-          ]}
+          style={[headerColor, {
+            fontSize: 15,
+            fontFamily: "NotoSans-Medium"
+          }]}
         >
           We are here for you.
         </Text>
@@ -155,26 +134,6 @@ const HomeScreen = ({
         </Animated.View>
         <View style={textSection}>
           <Text style={[font, { fontSize: 14 }]}>HOLD TO REQUEST EMERGENCY ASSISTANT</Text>
-
-
-          {/* Temporarily using this button in order to work notification */}
-          <TouchableHighlight
-            underlayColor="#d9d9d9"
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 7,
-              borderWidth: 1,
-              backgroundColor: loading === true ? "#d9d9d9" : "white",
-              borderRadius: 20,
-              marginTop: 50
-            }}
-            onPress={() => updateNotificationTokenAccountToDb(expoPushToken, accountId)}
-            disabled={loading === true}
-          >
-            <Text style={[font, { fontSize: 14, color: "black" }]}>Update my token</Text>
-          </TouchableHighlight>
-          {/* <Text style={[font, { fontSize: 12 }]}>{expoPushToken}</Text> */}
-
         </View>
       </View>
 
@@ -244,5 +203,11 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 150,
     padding: 50
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "silver"
   }
 })

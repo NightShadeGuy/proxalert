@@ -240,7 +240,7 @@ const ChatScreen = ({ user, accountDetails }) => {
             //onLayout={scrollToBottom}
             />
 
-            < View style={styles.row} >
+            <View style={styles.row}>
                 <TextInput
                     style={styles.input}
                     multiline
@@ -254,8 +254,8 @@ const ChatScreen = ({ user, accountDetails }) => {
                 >
                     <Ionicons name="send" size={24} color={defaultTheme} />
                 </TouchableOpacity>
-            </View >
-        </View >
+            </View>
+        </View>
     )
 }
 
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     headerImage: {
         width: 30,
         height: 30,
-        borderRadius: 15
+        borderRadius: 15,
     },
     headerNameText: {
         fontFamily: "NotoSans-Medium",

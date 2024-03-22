@@ -10,9 +10,7 @@ const Tab = createBottomTabNavigator();
 const BottomTabs = ({
     user,
     setUser,
-    accountDetails,
-    expoPushToken,
-    accountId
+    accountDetails
 }) => {
     return (
         <Tab.Navigator
@@ -36,8 +34,7 @@ const BottomTabs = ({
                     <HomeScreen
                         user={user}
                         setUser={setUser}
-                        expoPushToken={expoPushToken}
-                        accountId={accountId}
+                        accountDetails={accountDetails}
                     />
                 }
             </Tab.Screen>

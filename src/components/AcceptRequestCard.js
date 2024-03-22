@@ -172,7 +172,7 @@ const AcceptRequestCard = ({
             ) : (
                 <View style={styles.row}>
                     <Image
-                       source={{ uri: photoUrl ? photoUrl : defaultPhoto }}
+                        source={{ uri: photoUrl ? photoUrl : defaultPhoto }}
                         style={styles.image}
                     />
                     <ScrollView
@@ -180,6 +180,12 @@ const AcceptRequestCard = ({
                         style={{ flex: 1 }}
                     >
                         <Text style={styles.headerTitle}>Responder: {name}</Text>
+                        <Text style={styles.text}>
+                            {acceptedRequest.responder.sortResponder === "Medical"
+                                ? "Ambulance"
+                                : acceptedRequest.responder.sortResponder
+                            }
+                        </Text>
                         <Text style={styles.text}>{contactNumber}</Text>
                     </ScrollView>
                     <View style={{ rowGap: 10 }}>
@@ -227,6 +233,7 @@ const styles = StyleSheet.create({
         height: 50,
         width: 50,
         borderRadius: 25,
+        backgroundColor: "white"
     },
     row: {
         flex: 1,

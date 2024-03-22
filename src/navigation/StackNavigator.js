@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { auth, db } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { NavigationContainer } from "@react-navigation/native";
@@ -38,7 +38,7 @@ const StackNavigator = () => {
     const unsubscribe = onAuthStateChanged(auth, (userObserver) => {
       if (userObserver) {
         setUser(userObserver);
-        loadAccounts();
+        loadAccounts(userObserver);
         console.log("USER IS STILL LOGGED IN: ", userObserver);
       } else {
         console.log("USER IS LOGGED OUT");
@@ -50,7 +50,7 @@ const StackNavigator = () => {
   }, [user])
 
 
-  const loadAccounts = async () => {
+  const loadAccounts = async (user) => {
     try {
       onSnapshot(accountsRef, (querySnapshot) => {
         const accounts = querySnapshot.docs.map(doc => (
@@ -72,6 +72,16 @@ const StackNavigator = () => {
           setIsResponder(true);
         } else {
           setIsResponder(false);
+        }
+
+        if (myAccount?.uid === user?.uid) {
+          registerForPushNotificationsAsync()
+            .then(token => {
+              console.log("token:", token);
+              setExpoPushToken(token)
+              updateNotificationTokenAccountToDb(token, myAccount.id);
+            })
+            .catch(error => console.error(error));
         }
 
       })
@@ -134,26 +144,12 @@ const StackNavigator = () => {
       await updateDoc(accountRef, {
         notificationToken: token
       });
-
-      showToast("Token updated to DB", token);
+ 
+      showToast("Updated token successfully.", token);
     } catch (err) {
       console.error(err.message);
     }
   }
-
-  useEffect(() => {
-    registerForPushNotificationsAsync()
-      .then(token => {
-        console.log("token:", token);
-        setExpoPushToken(token)
-
-        if (user) {
-          updateNotificationTokenAccountToDb(token, accountDetails?.id);
-        }
-
-      })
-      .catch(error => console.error(error));
-  }, [])
 
   return (
     <NavigationContainer>
@@ -173,8 +169,6 @@ const StackNavigator = () => {
                 user={user}
                 setUser={setUser}
                 accountDetails={accountDetails}
-                expoPushToken={expoPushToken}
-                accountId={accountDetails?.id}
               />
             }
           </Stack.Screen>

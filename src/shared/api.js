@@ -1,8 +1,5 @@
 import axios from 'axios';
-import {
-    EXPO_LOCATIONIQ_KEY,
-    EXPO_GEOAPIFY_KEY
-} from "@env"
+import { EXPO_LOCATIONIQ_KEY, EXPO_GEOAPIFY_KEY } from "@env" 
 
 //Autocomplete api endpoint from LocationIQ
 export const fetchAutoComplete = async (input) => {

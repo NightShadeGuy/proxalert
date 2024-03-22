@@ -1,16 +1,24 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import {initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from "firebase/storage";
+import {
+  EXPO_API_KEY,
+  EXPO_AUTH_DOMAIN,
+  EXPO_PROJECT_ID,
+  EXPO_STORAGE_BUCKET,
+  EXPO_MESSAGING_SENDER_ID,
+  EXPO_APP_ID
+} from "@env"
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZtpfw6f_NR2jF5Kolpc-L66t1z6zL6EY",
-  authDomain: "proxalert-78672.firebaseapp.com",
-  projectId: "proxalert-78672",
-  storageBucket: "proxalert-78672.appspot.com",
-  messagingSenderId: "517909920098",
-  appId: "1:517909920098:web:904847402153188762543b"
+  apiKey: EXPO_API_KEY,
+  authDomain: EXPO_AUTH_DOMAIN,
+  projectId: EXPO_PROJECT_ID,
+  storageBucket: EXPO_STORAGE_BUCKET,
+  messagingSenderId: EXPO_MESSAGING_SENDER_ID,
+  appId: EXPO_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

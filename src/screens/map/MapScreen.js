@@ -10,8 +10,7 @@ import {
   TouchableHighlight,
   ScrollView,
   Pressable,
-  Image,
-  Alert
+  Image
 } from 'react-native'
 import React, {
   useState,
@@ -109,8 +108,9 @@ const MapScreen = ({
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [reportLocation, setReportLocation] = useState("");
   const [selectEmergencyType, setSelectEmergencyType] = useState(null);
+  const [selectResponderNeed, setSelectResponderNeed] = useState(null);
+  const [message, setMessage] = useState("");
   const [emergencyStatus, setEmergencyStatus] = useState("waiting");
-  const [statusButton, setStatusButton] = useState("idle");
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -215,8 +215,7 @@ const MapScreen = ({
 
   const requestEmergency = async () => {
     try {
-      if (selectEmergencyType && reportLocation) {
-        setStatusButton("submitting");
+      if (selectEmergencyType && selectResponderNeed && reportLocation) {
         setShowEmergencyModal(false);
         setModalVisible(true);
 
@@ -227,13 +226,15 @@ const MapScreen = ({
           photoUrl: user.photoURL,
           proofPhotoUrl: image ? await uploadMedia() : null,
           emergencyType: selectEmergencyType,
+          requestedResponder: selectResponderNeed,
+          message: message ? message : null,
           emergencyStatus: emergencyStatus,
           createdAt: serverTimestamp(),
           latitude: region.latitude,
           longitude: region.longitude,
           fullAddress: reportLocation,
           address: { ...details },
-          notificationToken: expoPushToken,
+          notificationToken: expoPushToken ? expoPushToken : null,
           showCompletedModal: false
         });
 
@@ -246,12 +247,11 @@ const MapScreen = ({
           `The sort of emergency is ${selectEmergencyType}.`
         )
       } else {
-        toast("You need to select your emergency type and your location");
+        toast("You need to select your emergency, location and your responder");
       }
     } catch (error) {
       toast(error.message);
     } finally {
-      setStatusButton("idle");
       setTimeout(() => {
         setIsSaved(false);
         setModalVisible(false);
@@ -376,28 +376,12 @@ const MapScreen = ({
       }));
       setDecodedCoordinates(decodedCoords);
 
-      /*   const sampleCoordinates = [  //Here's is a sample data of the end result decodedCoordinates
-        { latitude: 14.76911, longitude: 121.03853 },
-        { latitude: 14.76912, longitude: 121.03841 },
-        { latitude: 14.76912, longitude: 121.03791 },
-        { latitude: 14.76911, longitude: 121.03718 },
-      ];
-     */
     } catch (error) {
       console.error(error.message);
     } finally {
       setIsRoute(false);
     }
   }
-
-  /*   const updateRoute = () => {
-      const direction = [...decodedCoordinates];
-      direction.shift();
-      setDecodedCoordinates(direction);
-      console.log("references", direction);
-    }
-   */
-
 
   // Function to calculate distance between two points
   function distance(lat1, lon1, lat2, lon2) {
@@ -412,7 +396,6 @@ const MapScreen = ({
 
     return R * c;
   }
-
 
 
   const updateRoute = (myLatitude, myLongitude) => {
@@ -457,7 +440,6 @@ const MapScreen = ({
     }
   }
 
-
   const moveToRegion = (latitude, longitude, latitudeDelta, longitudeDelta) => {
     if (mapRef.current) {
       mapRef.current.animateToRegion(
@@ -480,7 +462,7 @@ const MapScreen = ({
           longitude: longitude
         },
         pitch: 90,
-        heading: 90,   //Need to calculateDirectionAngle, 0 Camera points north. 90: Camera points east. 180: Camera points south. 270: Camera points west.
+        heading: 0,
         altitude: 20,
         zoom: 20
       },
@@ -541,7 +523,6 @@ const MapScreen = ({
 
 
   const pickMedia = async () => {
-    // Permission request is necessary for accessing the image library
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== 'granted') {
@@ -588,7 +569,6 @@ const MapScreen = ({
 
     } catch (error) {
       console.error('Error uploading image:', error);
-      // Handle error
     }
   }
 
@@ -602,7 +582,7 @@ const MapScreen = ({
         initialRegion={region}
         provider={PROVIDER_GOOGLE}
         showsUserLocation
-      //followsUserLocation
+        followsUserLocation
       //showsTraffic
       >
         {details && (
@@ -754,12 +734,18 @@ const MapScreen = ({
           paddingHorizontal: 10,
           backgroundColor: !newCoordinates ? "rgb(240, 240, 240)" : "white"
         }]}
-        onPress={() => createRoute(
-          region.latitude,
-          region.longitude,
-          newCoordinates.latitude,
-          newCoordinates.longitude
-        )}
+        onPress={() => {
+          const start = async () => {
+            await createRoute(
+              region.latitude,
+              region.longitude,
+              newCoordinates.latitude,
+              newCoordinates.longitude
+            )
+            moveCamera(region.latitude, region.longitude);
+          }
+          start();
+        }}
         disabled={!newCoordinates}
       >
         <FontAwesome5
@@ -808,6 +794,8 @@ const MapScreen = ({
         maxHeight: search.length > 8 ? 200 : 50,
         paddingVertical: 5,
         borderRadius: 20,
+        borderBottomLeftRadius: search.length > 8 ? 8 : 20,
+        borderBottomRightRadius: search.length > 8 ? 8 : 20,
         shadowColor: "#000",
         shadowRadius: 5,
         shadowOpacity: 0.25,
@@ -818,7 +806,7 @@ const MapScreen = ({
             flexDirection: "row",
             alignItems: "center",
             borderBottomWidth: search.length > 8 && autoComplete.length > 0 ? 1 : 0,
-            borderColor: "#c8c8c9"
+            borderColor: "#c8c8c9",
           }}
         >
           <TextInput
@@ -856,7 +844,7 @@ const MapScreen = ({
           renderItem={({ item, index }) => (
             <TouchableOpacity
               style={[styles.listData, {
-                backgroundColor: item.osm_id === selectDestination ? "rgb(240, 240, 240)" : "white"
+                backgroundColor: item.osm_id === selectDestination ? "rgb(240, 240, 240)" : "white",
               }]}
               onPress={() => {
                 setSelectDestination(item.osm_id);
@@ -867,7 +855,6 @@ const MapScreen = ({
                   0.0922,
                   0.0421
                 );
-                //Alert.alert(item.type, `${item.display_name}`);
               }}
             >
               <FontAwesome5
@@ -888,15 +875,19 @@ const MapScreen = ({
 
       {/* Temporary display the data after fetching the location */}
       {showProfileDetails && (
-        <View style={styles.overlayContainer}>
+        <View
+          style={[styles.overlayContainer, {
+            bottom: acceptedRequest ? 120 : 90,
+          }]}
+        >
           <ScrollView
             style={{ height: 100 }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Checking to see if the data changes when the user is moving */}
+            <Text style={[styles.overlayButtonText, styles.details]}>Current Details</Text>
             <Text style={styles.overlayButtonText}>Latitude: {region.latitude}</Text>
             <Text style={styles.overlayButtonText}>Longitude: {region.longitude}</Text>
-            <Text style={styles.overlayButtonText}>Routes: {decodedCoordinates.length}</Text>
+            {/* <Text style={styles.overlayButtonText}>Routes: {decodedCoordinates.length}</Text> */}
 
             <Text style={styles.overlayButtonText}>Country: {details?.country}</Text>
             <Text style={styles.overlayButtonText}>Country Code: {details?.isoCountryCode}</Text>
@@ -975,25 +966,21 @@ const MapScreen = ({
         </Pressable>
       </Modal>
 
-      {
-        FindingHospitals && (
-          <StatusModal
-            status={FindingHospitals}
-            setStatus={setFindingHospitals}
-            message="We're looking a hospitals"
-          />
-        )
-      }
+      {FindingHospitals && (
+        <StatusModal
+          status={FindingHospitals}
+          setStatus={setFindingHospitals}
+          message="We're looking a hospitals"
+        />
+      )}
 
-      {
-        isRoute && (
-          <StatusModal
-            status={isRoute}
-            setStatus={setIsRoute}
-            message="Creating a route..."
-          />
-        )
-      }
+      {isRoute && (
+        <StatusModal
+          status={isRoute}
+          setStatus={setIsRoute}
+          message="Creating a route..."
+        />
+      )}
 
 
       <Modal
@@ -1028,7 +1015,7 @@ const MapScreen = ({
             backgroundColor: "rgba(0, 0, 0, 0.2)"
           }}
         >
-          <ScrollView
+          <View
             showsVerticalScrollIndicator={false}
             style={{
               position: "absolute",
@@ -1045,8 +1032,10 @@ const MapScreen = ({
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
-                paddingTop: 10,
-                paddingHorizontal: 20
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderBottomWidth: 1,
+                borderColor: "silver"
               }}
             >
               <Text
@@ -1060,157 +1049,205 @@ const MapScreen = ({
               </Text>
               <TouchableOpacity
                 activeOpacity={0.2}
-                onPress={() => setShowEmergencyModal(!showEmergencyModal)}
+                onPress={() => {
+                  setShowEmergencyModal(!showEmergencyModal);
+                  setSelectEmergencyType(null);
+                  setSelectResponderNeed(null);
+                  setImage(null);
+                  setMessage(null);
+                }}
               >
                 <Feather name="x" size={30} color="black" />
               </TouchableOpacity>
             </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={{
+                fontFamily: "NotoSans-SemiBold",
+                paddingHorizontal: 20,
+                marginTop: 3,
+                color: "gray"
+              }}>
+                Whats your emergency?
+              </Text>
 
-            <Text style={{
-              fontFamily: "NotoSans-SemiBold",
-              paddingHorizontal: 20,
-              color: "gray"
-            }}>
-              Whats your emergency?
-            </Text>
 
-
-            <View style={{ height: 80, paddingHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
-              <FlatList
-                data={emergencyTypes}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item, index) => index}
-                renderItem={({ item, index }) => (
-                  <TouchableOpacity
-                    style={{
-                      alignItems: "center",
-                      columnGap: 5,
-                      paddingTop: 5,
-                      paddingHorizontal: 5,
-                    }}
-                    onPress={() => {
-                      setSelectEmergencyType(item.type);
-                    }}
-                  >
-                    <View
+              <View style={{ height: 80, paddingHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
+                <FlatList
+                  data={emergencyTypes}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item, index) => index}
+                  renderItem={({ item, index }) => (
+                    <TouchableOpacity
                       style={{
-                        backgroundColor: selectEmergencyType === item.type ? item.color : "gray",
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        paddingHorizontal: 10,
-                        width: 50,
-                        height: 50,
-                        borderRadius: 25,
+                        alignItems: "center",
+                        columnGap: 5,
+                        paddingTop: 5,
+                        paddingHorizontal: 5,
+                      }}
+                      onPress={() => {
+                        setSelectEmergencyType(item.type);
                       }}
                     >
-                      <FontAwesome5 name={item.iconName} size={24} color="black" />
-                    </View>
-                    <Text style={{ fontFamily: "NotoSans-SemiBold", color: "gray" }}>{item.type}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
+                      <View
+                        style={{
+                          backgroundColor: selectEmergencyType === item.type ? item.color : "gray",
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          paddingHorizontal: 10,
+                          width: 50,
+                          height: 50,
+                          borderRadius: 25,
+                        }}
+                      >
+                        <FontAwesome5 name={item.iconName} size={24} color="black" />
+                      </View>
+                      <Text style={styles.categoryText}>{item.type}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
 
-            <Text style={{
-              paddingHorizontal: 20,
-              paddingVertical: 5,
-              color: "gray",
-              fontFamily: "NotoSans-SemiBold"
-            }}>
-              Location
-            </Text>
+              {selectEmergencyType && (
+                <>
+                  <Text style={styles.boldText}> Select a responder</Text>
+                  <View
+                    style={[styles.rectangle, {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }]}
+                  >
+                    <Pressable
+                      android_ripple={{ color: "#e57373", borderless: true }}
+                      style={[styles.categoryButton, {
+                        backgroundColor: selectResponderNeed === "Medical" ? defaultTheme : "transparent"
+                      }]}
+                      onPress={() => setSelectResponderNeed("Medical")}
+                    >
+                      <Text style={[styles.categoryText, {
+                        color: selectResponderNeed === "Medical" ? "white" : "gray"
+                      }]}>Ambulance</Text>
+                    </Pressable>
 
-            <View
-              style={{
-                marginHorizontal: 20,
-                borderWidth: 1,
-                borderColor: "gray",
-                borderRadius: 4,
-                position: "relative"
-              }}
-            >
-              <TextInput
-                placeholder='My location'
-                value={reportLocation}
-                onChangeText={text => setReportLocation(text)}
-                style={[styles.input, {
-                  color: "gray",
-                  fontFamily: "NotoSans-SemiBold"
-                }]}
-              />
+                    <Pressable
+                      android_ripple={{ color: "#e57373", borderless: true }}
+                      style={[styles.categoryButton, {
+                        backgroundColor: selectResponderNeed === "Police" ? defaultTheme : "transparent"
+                      }]}
+                      onPress={() => setSelectResponderNeed("Police")}
+                    >
+                      <Text style={[styles.categoryText, {
+                        color: selectResponderNeed === "Police" ? "white" : "gray"
+                      }]}>Police</Text>
+                    </Pressable>
+
+                    <Pressable
+                      android_ripple={{ color: "#e57373", borderless: true }}
+                      style={[styles.categoryButton, {
+                        backgroundColor: selectResponderNeed === "Fire fighter" ? defaultTheme : "transparent"
+                      }]}
+                      onPress={() => setSelectResponderNeed("Fire fighter")}
+                    >
+                      <Text style={[styles.categoryText, {
+                        color: selectResponderNeed === "Fire fighter" ? "white" : "gray"
+                      }]}>Fire fighter</Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+
+              <Text style={styles.boldText}>Location</Text>
+              <View style={styles.rectangle}>
+                <TextInput
+                  placeholder='My location'
+                  value={reportLocation}
+                  onChangeText={text => setReportLocation(text)}
+                  style={[styles.input, {
+                    color: "gray",
+                    fontFamily: "NotoSans-SemiBold"
+                  }]}
+                />
+                <TouchableOpacity
+                  style={{
+                    position: "absolute",
+                    top: 7,
+                    right: 7
+                  }}
+                  onPress={() => {
+                    setShowEmergencyModal(!showEmergencyModal);
+                    fetchMyLocation()
+                  }}
+                >
+                  <MaterialIcons
+                    name="my-location"
+                    size={24}
+                    color={defaultTheme}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.boldText}>
+                Upload Photo
+                <Text style={{ color: "silver", fontSize: 11 }}> (optional)</Text>
+              </Text>
+
+              <View style={styles.rectangle}>
+                <TouchableOpacity style={{ alignItems: "center", paddingVertical: 10 }} onPress={pickMedia}>
+                  {!image && (
+                    <>
+                      <MaterialCommunityIcons name="upload" size={24} color="gray" />
+                      <Text style={{ fontFamily: "NotoSans-Medium", color: defaultTheme, fontSize: 12 }}>Upload photo</Text>
+                    </>
+                  )}
+                  {image && (
+                    <Image source={{ uri: image }} style={{ width: 150, height: 70 }} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.boldText}>
+                Message
+                <Text style={{ color: "silver", fontSize: 11 }}> (optional)</Text>
+              </Text>
+              <View
+                style={{
+                  backgroundColor: "rgba(240, 240, 240, 0.5)",
+                  marginHorizontal: 20,
+                  height: 70,
+                  borderRadius: 6
+                }}
+              >
+                <TextInput
+                  multiline
+                  placeholder='Enter your message...'
+                  style={[styles.defaultFont, {
+                    padding: 10
+                  }]}
+                  onChangeText={(text) => setMessage(text)}
+                />
+              </View>
 
               <TouchableOpacity
                 style={{
-                  position: "absolute",
-                  top: 7,
-                  right: 7
+                  backgroundColor: defaultTheme,
+                  marginHorizontal: 20,
+                  marginVertical: 10,
+                  borderRadius: 4,
                 }}
-                onPress={() => {
-                  setShowEmergencyModal(!showEmergencyModal);
-                  fetchMyLocation()
-                }}
+                onPress={requestEmergency}
               >
-                <MaterialIcons
-                  name="my-location"
-                  size={24}
-                  color={defaultTheme}
-                />
+                <Text style={{
+                  color: "white",
+                  textAlign: "center",
+                  fontFamily: "NotoSans-Medium",
+                  paddingVertical: 7
+                }}
+                >Send report
+                </Text>
               </TouchableOpacity>
-            </View>
-
-            <Text style={{
-              paddingHorizontal: 20,
-              paddingVertical: 5,
-              color: "gray",
-              fontFamily: "NotoSans-SemiBold"
-            }}>
-              Upload Photo
-              <Text style={{ color: "silver", fontSize: 11 }}> (optional)</Text>
-            </Text>
-
-            <View
-              style={{
-                marginHorizontal: 20,
-                borderWidth: 1,
-                borderColor: "gray",
-                borderRadius: 4,
-                position: "relative"
-              }}
-            >
-              <TouchableOpacity style={{ alignItems: "center", paddingVertical: 10 }} onPress={pickMedia}>
-                {!image && (
-                  <>
-                    <MaterialCommunityIcons name="upload" size={24} color="gray" />
-                    <Text style={{ fontFamily: "NotoSans-Medium", color: defaultTheme, fontSize: 12 }}>Upload photo</Text>
-                  </>
-                )}
-
-                {image && (
-                  <Image source={{ uri: image }} style={{ width: 150, height: 70 }} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: defaultTheme,
-                marginHorizontal: 20,
-                marginVertical: 10,
-                borderRadius: 4,
-              }}
-              onPress={requestEmergency}
-            >
-              <Text style={{
-                color: "white",
-                textAlign: "center",
-                fontFamily: "NotoSans-Medium",
-                paddingVertical: 7
-              }}
-              >Send report
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </View>
       </Modal>
 
@@ -1276,9 +1313,16 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   overlayButtonText: {
-    color: "green",
+    color: "gray",
     fontSize: 12,
     fontFamily: "NotoSans-SemiBold"
+  },
+  details: {
+    fontSize: 15,
+    borderBottomWidth: 1,
+    borderColor: "silver",
+    color: defaultTheme,
+    fontFamily: "NotoSans-Bold"
   },
   input: {
     height: 40,
@@ -1288,7 +1332,6 @@ const styles = StyleSheet.create({
   },
   overlayContainer: {
     position: 'absolute',
-    bottom: 90, //default  top: 50
     left: 15,
     backgroundColor: 'white',
     paddingHorizontal: 20,
@@ -1348,8 +1391,34 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     maxWidth: 150,
     textAlign: "center"
+  },
+  categoryText: {
+    fontFamily: "NotoSans-SemiBold",
+    color: "gray",
+    textAlign: "center"
+  },
+  categoryButton: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "white",
+    borderRightWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: "silver"
+  },
+  boldText: {
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    color: "gray",
+    fontFamily: "NotoSans-SemiBold"
+  },
+  rectangle: {
+    marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "silver",
+    borderRadius: 4,
+    //position: "relative"
   }
-
 })
 
 export default MapScreen;

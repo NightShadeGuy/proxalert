@@ -14,13 +14,17 @@ import {
   Image,
   ToastAndroid,
 } from 'react-native';
-import { updateProfile, updatePassword, signOut } from "firebase/auth";
+import {
+  updateProfile,
+  updatePassword,
+  signOut
+} from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore"
 import { db, auth } from '../config/firebase';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { defaultTheme, toast } from "../shared/utils";
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { showToast } from '../shared/utils';
+import { showToast, useDefaultPhoto } from '../shared/utils';
 
 const SettingsScreen = ({ user, setUser, accountDetails }) => {
   const {
@@ -66,8 +70,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
         </TouchableOpacity>
       )
     })
-
-    console.log("USeLayout effect run");
   }, [])
 
   const [showInfo, setShowInfo] = useState(false);
@@ -155,7 +157,6 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
     setUsername(user?.displayName);
     setPhotoUrl(user?.photoURL);
     setPhoneNumber(accountDetails?.contactNumber);
-    console.log("Settings screen effect run");
   }, [user, accountDetails])
 
 
@@ -172,13 +173,23 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
             alignItems: "center",
           }}
         >
-          <Image
-            source={{ uri: profilePicture }}
-            style={styles.image}
-          />
+          {user?.photoURL ? (
+            <Image
+              source={{ uri: user?.photoURL }}
+              style={styles.image}
+            />
+          ) : (
+            <Image
+              source={{ uri: useDefaultPhoto(accountDetails?.isResponder, accountDetails?.sortResponder).photo }}
+              style={styles.image}
+            />
+          )}
         </View>
 
         <Text style={styles.headerTitle}>{accountDetails?.user}</Text>
+        {accountDetails?.isResponder && (
+          <Text style={[font, { textAlign: "center" }]}>{accountDetails?.sortResponder}</Text>
+        )}
         <Text style={[font, { textAlign: "center" }]}>{accountDetails?.contactNumber}</Text>
 
         <View style={section}>
@@ -331,9 +342,7 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //justifyContent: "center",
-    //alignItems: "center",
-    backgroundColor: "white"
+    backgroundColor: "white",
   },
   defaultText: {
     fontSize: 12,
@@ -355,7 +364,8 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     marginTop: 90,
     borderWidth: 5,
-    borderColor: "white"
+    borderColor: "white",
+    backgroundColor: "silver"
   },
   section: {
     backgroundColor: "#D64045",

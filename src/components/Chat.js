@@ -36,7 +36,6 @@ const Chat = ({
                     columnGap: 10,
                 }}
             >
-
                 {user.uid !== item.senderUid && (
                     <Image
                         source={{ uri: (item.senderPhotoUrl || defaultPhoto) }}
@@ -50,7 +49,7 @@ const Chat = ({
                         flexDirection: "row",
                         columnGap: 7,
                         position: "relative",
-                        marginRight: showEditMessage[index] && 30
+                        marginRight: showEditMessage[index] ? 30 : 0
                     }]}
                     onLongPress={() => {
                         if (user.uid === item.senderUid) {
@@ -185,7 +184,6 @@ const Chat = ({
                     </Pressable>
                 </Modal>
             </View>
-
         </>
     )
 }
@@ -196,7 +194,7 @@ const styles = StyleSheet.create({
     profile: {
         width: 45,
         height: 45,
-        borderRadius: 22.5
+        borderRadius: 22.5,
     },
     nameText: {
         position: 'absolute',

@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     FlatList,
-    Image
+    Image,
+    ScrollView
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Feather } from '@expo/vector-icons';
@@ -15,7 +16,8 @@ import {
     toast,
     emergencyRequestRef,
     calendarFormat,
-    sendNotification
+    sendNotification,
+    useDefaultPhoto
 } from '../shared/utils';
 import {
     deleteDoc,
@@ -91,7 +93,8 @@ const EmergencyRequestCard = ({
                     name: accountDetails.user,
                     contactNumber: accountDetails.contactNumber,
                     notificationToken: expoPushToken,
-                    photoUrl,
+                    sortResponder: accountDetails.sortResponder,
+                    photoUrl: photoUrl ? photoUrl : useDefaultPhoto(accountDetails.isResponder, accountDetails.sortResponder).vehicleIcon,
                     latitude,
                     longitude,
                 }
@@ -221,7 +224,12 @@ const EmergencyRequestCard = ({
                             renderItem={({ item, index }) => (
                                 <View style={{ marginVertical: 6 }}>
                                     <View>
-                                        <Text style={[styles.text, { textAlign: "right", color: "silver" }]}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
+                                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                                            <Text style={[styles.text, styles.categoryText]}>
+                                                Need: {item.requestedResponder === "Medical" ? "Ambulance" : item.requestedResponder}
+                                            </Text>
+                                            <Text style={[styles.text, { color: "silver" }]}>{calendarFormat(item.createdAt?.nanoseconds, item.createdAt?.seconds)}</Text>
+                                        </View>
                                         <View style={styles.row}>
                                             <Image
                                                 source={{ uri: item.photoUrl ? item.photoUrl : "https://i.pinimg.com/564x/05/11/45/051145a8e366876f859378154aa7df8b.jpg" }}
@@ -235,6 +243,11 @@ const EmergencyRequestCard = ({
 
                                         <Text style={styles.text}>Emergency type: {item.emergencyType}</Text>
                                         <Text style={styles.text}> Address: {item.fullAddress} </Text>
+                                        {item.message && (
+                                            <View style={styles.messageContainer}>
+                                                <Text style={styles.text}>{item.message}</Text>
+                                            </View>
+                                        )}
                                     </View>
 
                                     {!accountDetails?.isResponder && (
@@ -324,7 +337,6 @@ const EmergencyRequestCard = ({
                                             </View>
                                         </>
                                     ) : (
-
                                         <View style={{
                                             flexDirection: "row",
                                             alignItems: "center",
@@ -332,8 +344,8 @@ const EmergencyRequestCard = ({
                                             marginVertical: 5,
                                             paddingVertical: 10,
                                             paddingHorizontal: 10,
-                                            backgroundColor: "#f3f3f3",
-                                            borderRadius: 6
+                                            backgroundColor: "#f4f4f4",
+                                            borderRadius: 6,
                                         }}>
                                             <ActivityIndicator size={30} color={defaultTheme} />
                                             <Text style={styles.text}>
@@ -383,6 +395,14 @@ const styles = StyleSheet.create({
         color: "gray",
         fontFamily: "NotoSans-Medium",
         paddingHorizontal: 20
+    },
+    categoryText: {
+        fontSize: 12,
+        paddingVertical: 3,
+        backgroundColor: "#e57373",
+        color: "white",
+        borderRadius: 20,
+        marginLeft: 20
     },
     filterText: {
         fontFamily: "NotoSans-Medium",
@@ -438,6 +458,15 @@ const styles = StyleSheet.create({
         color: "white",
         fontFamily: "NotoSans-Bold",
         textAlign: "center"
+    },
+    messageContainer: {
+        backgroundColor: "rgba(245, 245, 245, 0.5)",
+        paddingVertical: 5,
+        marginHorizontal: 20,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: "rgba(225, 225, 225, 1)",
+        borderRadius: 6
     }
 
 

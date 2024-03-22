@@ -37,6 +37,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
         id,
         createdAt: { nanoseconds, seconds },
         address: { city, district, region, street, streetNumber },
+        fullAddress,
         emergencyType,
         latitude,
         longitude,
@@ -167,8 +168,9 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                 altitude: 0
                             }}
                             title={name}
+                            description={fullAddress}
                         >
-                            {user.photoURL && (
+                            {user.photoURL ? (
                                 <Image
                                     source={{ uri: photoUrl }}
                                     style={{
@@ -177,15 +179,14 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                         borderRadius: 20,
                                     }}
                                 />
-                            )}
-
-                            {!photoUrl && (
+                            ) : (
                                 <MaterialCommunityIcons
                                     name="human-handsup"
                                     size={40}
                                     color="green"
                                 />
                             )}
+
                         </Marker>
                     )}
 
@@ -198,27 +199,17 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                                 longitudeDelta,
                                 altitude: 0
                             }}
-                            title={responder.name}
+                            title={`${responder.name} • ${responder.sortResponder}`}
+                            description={`Contact Phone: ${responder.contactNumber}`}
                         >
-                            {user.photoURL ? (
-                                <Image
-                                    source={{ uri: responder.photoUrl }}
-                                    style={{
-                                        height: 40,
-                                        width: 40,
-                                        borderRadius: 20,
-                                    }}
-                                />
-                            ) : (
-                                <Image
-                                    source={{ uri: "https://i.pinimg.com/564x/c2/c9/94/c2c994ac29361808c93c913338ad69b3.jpg" }}
-                                    style={{
-                                        height: 40,
-                                        width: 40,
-                                        borderRadius: 20,
-                                    }}
-                                />
-                            )}
+                            <Image
+                                source={{ uri: responder.photoUrl }}
+                                style={{
+                                    height: 40,
+                                    width: 40,
+                                    borderRadius: 20,
+                                }}
+                            />
                         </Marker>
                     )}
                 </MapView>
@@ -320,7 +311,7 @@ const InboxViewDetails = ({ user, accountDetails }) => {
                     message="Deleting..."
                 />
             )}
-        </ScrollView>
+        </ScrollView >
     )
 }
 
