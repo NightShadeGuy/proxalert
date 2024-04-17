@@ -9,7 +9,9 @@ import {
     TouchableHighlight,
     ScrollView,
     Image,
-    Pressable
+    Pressable,
+    LayoutAnimation,
+    Dimensions
 } from 'react-native'
 import React, {
     useState,
@@ -45,7 +47,8 @@ import {
     FontAwesome,
     FontAwesome5,
     MaterialIcons,
-    MaterialCommunityIcons
+    MaterialCommunityIcons,
+    Feather
 } from '@expo/vector-icons';
 import StatusModal from '../../components/StatusModal';
 import {
@@ -75,7 +78,10 @@ const ResponderMapScreen = ({
             headerTitle: "Help Someone in Need",
             headerRight: () => (
                 <TouchableOpacity
-                    onPress={() => setShowProfileDetails(!showProfileDetails)}
+                    onPress={() => {
+                        setShowProfileDetails(!showProfileDetails);
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    }}
                 >
                     <MaterialCommunityIcons
                         name={showProfileDetails ? "account-details" : "account-details-outline"}
@@ -114,6 +120,8 @@ const ResponderMapScreen = ({
     const [search, setSearch] = useState("");
     const [autoComplete, setAutoComplete] = useState([]);
     const [selectDestination, setSelectDestination] = useState(0);
+    const [showCategory, setShowCategory] = useState(false);
+    const [selectCategory, setSelectCategory] = useState("");
     const mapRef = useRef(null);
 
     //console.log("Select destination", selectDestination);
@@ -126,9 +134,10 @@ const ResponderMapScreen = ({
     //console.log("routes", routes);
     console.log("decoded", decodedCoordinates);
 
-    const [listOfHospitals, setListOfHospitals] = useState([]);
-    const [showHospitals, setShowHospitals] = useState(false);
-    const [FindingHospitals, setFindingHospitals] = useState(false);
+    //Hospital and Police state 
+    const [listOfCategory, setListOfCategory] = useState([]);
+    const [showListOfCategory, setShowListOfCategory] = useState(false);
+    const [loadingCategory, setLoadingCategory] = useState(false);
 
     const fetchMyLocation = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -359,21 +368,22 @@ const ResponderMapScreen = ({
         }
     };
 
-    const findHospitals = async () => {
-        setFindingHospitals(true);
+    const getRequestedCategory = async (category) => {
+        setLoadingCategory(true);
         try {
             const hospitals = await searchByRadius(
+                category,
                 region.latitude,
                 region.longitude,
                 6000
             );
-            setListOfHospitals(hospitals.features);
+            setListOfCategory(hospitals.features);
             console.log("List of near hospital base on the location", hospitals.features);
         } catch (error) {
             console.error(error.message);
         } finally {
-            setFindingHospitals(false);
-            setShowHospitals(true);
+            setLoadingCategory(false);
+            setShowListOfCategory(true);
         }
     }
 
@@ -444,7 +454,6 @@ const ResponderMapScreen = ({
                 { ...doc.data(), id: doc.id }
             ))
             setEmergencyRequest(requestEmergency);
-
             console.log("Responder load emergency request", requestEmergency);
         })
     }
@@ -541,8 +550,8 @@ const ResponderMapScreen = ({
                         ))
                 )}
 
-                {listOfHospitals.length > 0 && (
-                    listOfHospitals.filter(marker => marker.properties.datasource.raw.osm_id === selectDestination)
+                {listOfCategory.length > 0 && (
+                    listOfCategory.filter(marker => marker.properties.datasource.raw.osm_id === selectDestination)
                         .map(marker => (
                             <Marker
                                 key={marker.properties.datasource.raw.osm_id}
@@ -555,11 +564,17 @@ const ResponderMapScreen = ({
                                 title={marker.properties.address_line1}
                                 description={marker.properties.address_line2}
                             >
-                                <MaterialCommunityIcons
-                                    name="hospital-marker"
-                                    size={30}
-                                    color={defaultTheme}
-                                />
+                                {selectCategory === "hospital" && (
+                                    <MaterialCommunityIcons
+                                        name="hospital-marker"
+                                        size={30}
+                                        color={defaultTheme}
+                                    />
+                                )}
+
+                                {selectCategory === "police" && (
+                                    <MaterialIcons name="local-police" size={24} color="#01579b" />
+                                )}
                             </Marker>
                         ))
                 )}
@@ -632,7 +647,9 @@ const ResponderMapScreen = ({
                 title="View emergency request"
                 style={[styles.overlayButton, {
                     bottom: 19,
-                    right: 90,
+                    left: '50%',
+                    transform: [{ translateX: -Dimensions.get("window").width / 4 }],
+                    right: 'auto', // Ensure 'right' is 'auto' to prevent conflicts
                 }]}
                 textStyle={styles.overlayButtonText}
                 textColor={defaultTheme}
@@ -645,16 +662,12 @@ const ResponderMapScreen = ({
                     bottom: acceptedRequest ? 220 : 165,
                     right: 10,
                     paddingHorizontal: 10,
-                    backgroundColor: listOfHospitals.length <= 0 ? "rgb(240, 240, 240)" : "white"
+                    backgroundColor: listOfCategory.length <= 0 ? "rgb(240, 240, 240)" : "white"
                 }]}
-                onPress={() => setShowHospitals(true)}
-                disabled={listOfHospitals.length <= 0}
+                onPress={() => setShowListOfCategory(true)}
+                disabled={listOfCategory.length <= 0}
             >
-                <MaterialCommunityIcons
-                    name="hospital-box-outline"
-                    size={24}
-                    color={listOfHospitals.length <= 0 ? "silver" : defaultTheme}
-                />
+                <Feather name="list" size={24} color={listOfCategory.length <= 0 ? "silver" : defaultTheme} />
             </TouchableOpacity>
             <TouchableOpacity
                 activeOpacity={0.3}
@@ -720,7 +733,8 @@ const ResponderMapScreen = ({
                         flexDirection: "row",
                         alignItems: "center",
                         borderBottomWidth: search.length > 8 && autoComplete.length > 0 ? 1 : 0,
-                        borderColor: "#c8c8c9"
+                        borderColor: "#c8c8c9",
+                        position: "relative"
                     }}
                 >
                     <TextInput
@@ -738,18 +752,52 @@ const ResponderMapScreen = ({
                         />
                     )}
                     {search.length == 0 && (
-                        <TouchableHighlight
-                            activeOpacity={0.6}
-                            underlayColor="#DDDDDD"
-                            style={{ borderRadius: 20, padding: 4 }}
-                            onPress={findHospitals}
-                        >
-                            <MaterialCommunityIcons
-                                name="hospital-marker"
-                                size={24}
-                                color={defaultTheme}
-                            />
-                        </TouchableHighlight>
+                        <View>
+                            <View>
+                                <TouchableHighlight
+                                    activeOpacity={0.6}
+                                    underlayColor="#DDDDDD"
+                                    style={{ borderRadius: 20, padding: 4 }}
+                                    onPress={() => {
+                                        setShowCategory(!showCategory)
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                    }}
+                                >
+                                    <MaterialIcons name="category" size={20} color="#00d084" />
+                                </TouchableHighlight>
+
+                                <View
+                                    style={{
+                                        display: showCategory ? "flex" : "none",
+                                        position: "absolute",
+                                        top: 50,
+                                        alignItems: "center",
+                                        rowGap: 6,
+                                    }}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.4}
+                                        onPress={() => {
+                                            setShowCategory(false);
+                                            setSelectCategory("healthcare.hospital".replace(/healthcare./gi, ""));
+                                            getRequestedCategory("healthcare.hospital");
+                                        }}
+                                    >
+                                        <MaterialCommunityIcons name="hospital-marker" size={30} color={defaultTheme} />
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        activeOpacity={0.4}
+                                        onPress={() => {
+                                            setShowCategory(false);
+                                            setSelectCategory("service.police".replace(/service./gi, ""));
+                                            getRequestedCategory("service.police");
+                                        }}
+                                    >
+                                        <MaterialIcons name="local-police" size={26} color="#01579b" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
                     )}
                 </View>
                 <FlatList
@@ -800,8 +848,6 @@ const ResponderMapScreen = ({
                         <Text style={[styles.overlayButtonText, styles.details]}>Current Details</Text>
                         <Text style={styles.overlayButtonText}>Latitude: {region.latitude}</Text>
                         <Text style={styles.overlayButtonText}>Longitude: {region.longitude}</Text>
-                        {/*  <Text style={styles.overlayButtonText}>Routes: {decodedCoordinates.length}</Text> */}
-
                         <Text style={styles.overlayButtonText}>Country: {details?.country}</Text>
                         <Text style={styles.overlayButtonText}>Country Code: {details?.isoCountryCode}</Text>
                         <Text style={styles.overlayButtonText}>Region: {details?.region}</Text>
@@ -816,8 +862,8 @@ const ResponderMapScreen = ({
             <Modal
                 animationType='slide'
                 transparent
-                visible={showHospitals}
-                onRequestClose={() => setShowHospitals(!showHospitals)}
+                visible={showListOfCategory}
+                onRequestClose={() => setShowListOfCategory(!showListOfCategory)}
             >
                 <Pressable
                     style={{
@@ -825,7 +871,7 @@ const ResponderMapScreen = ({
                         alignItems: 'center',
                         backgroundColor: "rgba(0, 0, 0, 0.2)"
                     }}
-                    onPress={() => setShowHospitals(!showHospitals)}
+                    onPress={() => setShowListOfCategory(!showListOfCategory)}
                 >
                     <View
                         style={{
@@ -837,10 +883,10 @@ const ResponderMapScreen = ({
                         }}
                     >
                         <Text style={[styles.headerHospital, styles.headerTitle]}>
-                            List of Hospital base on your Location
+                            List of {selectCategory === "hospital" && "hospitals"} {selectCategory === "police" && "police stations"} base on your location
                         </Text>
                         <FlatList
-                            data={listOfHospitals}
+                            data={listOfCategory}
                             keyExtractor={item => item.properties.datasource.raw.osm_id}
                             renderItem={({ item, index }) => (
                                 <TouchableOpacity
@@ -851,8 +897,8 @@ const ResponderMapScreen = ({
                                     }]}
                                     onPress={() => {
                                         setSelectDestination(item.properties.datasource.raw.osm_id);
-                                        setShowHospitals(!showHospitals);
-                                        fetchSelectedDestination(listOfHospitals, item.properties.datasource.raw.osm_id);
+                                        setShowListOfCategory(!showListOfCategory);
+                                        fetchSelectedDestination(listOfCategory, item.properties.datasource.raw.osm_id);
                                         moveToRegion(
                                             parseFloat(item.properties.lat),
                                             parseFloat(item.properties.lon),
@@ -861,11 +907,13 @@ const ResponderMapScreen = ({
                                         );
                                     }}
                                 >
-                                    <FontAwesome5
-                                        name="hospital"
-                                        size={24}
-                                        color={defaultTheme}
-                                    />
+                                    {selectCategory === "hospital" && (
+                                        <FontAwesome5 name="hospital" size={24} color={defaultTheme} />
+                                    )}
+
+                                    {selectCategory === "police" && (
+                                        <MaterialIcons name="local-police" size={24} color="#01579b" />
+                                    )}
                                     <View>
                                         <Text style={styles.headerHospital}>{item.properties.address_line1}</Text>
                                         <Text style={[styles.defaultFont, { marginBottom: 2 }]}>{item.properties.address_line2}</Text>
@@ -892,11 +940,16 @@ const ResponderMapScreen = ({
                 />
             )}
 
-            {FindingHospitals && (
+            {loadingCategory && (
                 <StatusModal
-                    status={FindingHospitals}
-                    setStatus={setFindingHospitals}
-                    message="We're looking a hospitals"
+                    status={loadingCategory}
+                    setStatus={setLoadingCategory}
+                    message={selectCategory === "hospital"
+                        ? "We're looking a hospitals"
+                        : selectCategory === "police"
+                            ? "Were looking a police station"
+                            : ""
+                    }
                 />
             )}
 
@@ -1039,7 +1092,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         textAlign: "center",
         fontSize: 16,
-        paddingVertical: 10,
+        paddingVertical: 12,
         backgroundColor: defaultTheme,
         color: "white",
     },

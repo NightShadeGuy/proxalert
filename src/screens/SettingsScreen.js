@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   Image,
   ToastAndroid,
+  LayoutAnimation
 } from 'react-native';
 import {
   updateProfile,
@@ -197,6 +198,7 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
             style={sameRow}
             onPress={() => {
               setShowInfo(!showInfo);
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
               if (showChangePass) {
                 setShowChangePass(false);
@@ -281,6 +283,7 @@ const SettingsScreen = ({ user, setUser, accountDetails }) => {
             style={sameRow}
             onPress={() => {
               setShowChangePass(!showChangePass);
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
               if (showInfo) {
                 setShowInfo(false);

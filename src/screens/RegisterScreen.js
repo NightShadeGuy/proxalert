@@ -5,7 +5,8 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Image
+  Image,
+  LayoutAnimation
 } from "react-native";
 import React, { useState } from "react";
 import { auth } from "../config/firebase";
@@ -211,6 +212,7 @@ const RegisterScreen = ({ user, setUser }) => {
             }}
             onPress={() => {
               setRegisterAsResponder(!registerAsResponder)
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
               setSelectTypeResponder(null);
             }}
           >

@@ -133,7 +133,12 @@ const HomeScreen = ({
           </Pressable>
         </Animated.View>
         <View style={textSection}>
-          <Text style={[font, { fontSize: 14 }]}>HOLD TO REQUEST EMERGENCY ASSISTANT</Text>
+          <Text style={[font, { fontSize: 14 }]}>
+            {accountDetails?.isResponder
+              ? "HOLD TO GO OVER TO THE EMERGENCY MAP"
+              : "HOLD TO REQUEST EMERGENCY ASSISTANT"
+            }
+          </Text>
         </View>
       </View>
 

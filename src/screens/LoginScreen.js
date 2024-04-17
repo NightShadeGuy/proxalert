@@ -96,7 +96,7 @@ const LoginScreen = ({ user, setUser }) => {
 
   return (
     <View style={container}>
-      <View style={[section, { flexDirection: "row" }]}>
+      <View style={[section, { flexDirection: "row", justifyContent: "space-between" }]}>
         <Text
           style={[headerText, font, {
             marginLeft: 20

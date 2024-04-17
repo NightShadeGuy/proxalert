@@ -26,7 +26,8 @@
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyAJwBJZ7YHp0T_oEAyHjsseeCmQI5uQOj0"
-      }
+      },
+      "bundleIdentifier": "com.proxalert"
     },
     "android": {
       "adaptiveIcon": {
