@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -144,7 +144,7 @@ const StackNavigator = () => {
       await updateDoc(accountRef, {
         notificationToken: token
       });
- 
+
       showToast("Updated token successfully.", token);
     } catch (err) {
       console.error(err.message);
