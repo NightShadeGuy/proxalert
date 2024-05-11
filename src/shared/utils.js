@@ -78,14 +78,14 @@ export const showToast = (message1 = "", message2 = "", type = "success") => {
 }
 
 export const sendNotification = async (token, title, body) => {
-    const message = {
-        to: token,
-        sound: "default",
-        title: title,
-        body: body
-    }
-
     try {
+        const message = {
+            to: token,
+            sound: "default",
+            title: title,
+            body: body
+        }
+
         await fetch("https://exp.host/--/api/v2/push/send", {
             method: "POST",
             headers: {

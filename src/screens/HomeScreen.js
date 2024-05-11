@@ -141,8 +141,6 @@ const HomeScreen = ({
           </Text>
         </View>
       </View>
-
-
     </View>
   )
 }

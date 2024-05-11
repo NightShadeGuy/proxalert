@@ -161,15 +161,12 @@ const ResponderMapScreen = ({
             ));
             console.log("Region state:", region);
 
-            const subscription = await Location.watchPositionAsync(
-                {
-                    enableHighAccuracy: true,
-                    distanceInterval: 10
-                },
-                (newLocation) => {
-                    updateLocation(newLocation);
-                }
-            );
+            const subscription = await Location.watchPositionAsync({
+                enableHighAccuracy: true,
+                distanceInterval: 5
+            }, (newLocation) => {
+                updateLocation(newLocation);
+            });
 
         } catch (error) {
             toast(error.message);
@@ -191,17 +188,28 @@ const ResponderMapScreen = ({
             }
         ));
         moveCamera(location?.coords.latitude, location?.coords.longitude);
-        updateRoute(location?.coords.latitude, location?.coords.longitude);
         console.log("Watch new position", location);
         console.log("New address", newAddress[0]);
 
-        if (acceptedRequest && (region.latitude !== location.coords.latitude || region.longitude !== location.coords.longitude)) {
-            updateResponderLocationToDB(
-                location.coords.latitude,
-                location.coords.longitude,
+        if (acceptedRequest && location && location.coords && acceptedRequest.id && (region.latitude !== location.coords.latitude || region.longitude !== location.coords.longitude)) {
+            await updateResponderLocationToDB(
+                location?.coords.latitude,
+                location?.coords.longitude,
                 acceptedRequest.id
             );
         }
+
+        if (decodedCoordinates.length > 0) {
+            await createRoute(
+                location.coords.latitude,
+                location.coords.longitude,
+                newCoordinates.latitude,
+                newCoordinates.longitude,
+            )
+            console.log("Recreate route Responder map");
+        }
+
+
     };
 
     const onChangeText = async (text) => {
@@ -234,11 +242,18 @@ const ResponderMapScreen = ({
                     latitude,
                     longitude
                 };
-
+                const routeForUserAndResponder = await createRoute(
+                    latitude,
+                    longitude,
+                    acceptedRequest.latitude,
+                    acceptedRequest.longitude
+                )
                 await updateDoc(emergencyRequestRef, {
+                    direction: routeForUserAndResponder,
                     responder: updatedResponder
                 });
                 console.log("Successfully updated the coordinates of responder in DB");
+                console.log("The request has been accepted & Recreate route for Responder and user map");
             }
         } catch (error) {
             console.error(error.message);
@@ -286,8 +301,10 @@ const ResponderMapScreen = ({
         }
     };
 
-    const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
-        setIsRoute(true);
+    const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong, isSetRoute = false) => {
+        if (isSetRoute) {
+            setIsRoute(isSetRoute);
+        }
         try {
             let originCoord = `${myLocationLong},${myLocationLat}`;
             let destinationCoord = `${destinationLong},${destinationLat}`;
@@ -329,44 +346,6 @@ const ResponderMapScreen = ({
             setIsRoute(false);
         }
     }
-
-    // Function to calculate distance between two points
-    function distance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Radius of the earth in km
-        const dLat = (lat2 - lat1) * Math.PI / 180; // Convert degrees to radians
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
-    }
-
-    const updateRoute = (myLatitude, myLongitude) => {
-        console.log("UpdateRoute current loc latitude:", myLatitude, " longitude:", myLongitude);
-        const distanceThreshold = 0.05; // Adjust as needed
-        const direction = [...decodedCoordinates];
-
-        // Calculate distance between current location and the first coordinate
-        const dist = distance(
-            myLatitude,
-            myLongitude,
-            direction[0]?.latitude,
-            direction[0]?.longitude
-        );
-        console.log("dist", dist);
-
-        // If the distance is less than the threshold, remove the first coordinate
-        if (dist <= distanceThreshold) {
-            direction.shift();
-            setDecodedCoordinates(direction);
-            console.log("Updated route:", direction);
-        } else {
-            console.log("Still on track.");
-        }
-    };
 
     const getRequestedCategory = async (category) => {
         setLoadingCategory(true);
@@ -627,6 +606,10 @@ const ResponderMapScreen = ({
                 )}
             </MapView>
 
+
+
+
+
             {acceptedRequest && !acceptedRequest.direction && (
                 <TouchableOpacity
                     activeOpacity={0.4}
@@ -649,7 +632,7 @@ const ResponderMapScreen = ({
                     bottom: 19,
                     left: '50%',
                     transform: [{ translateX: -Dimensions.get("window").width / 4 }],
-                    right: 'auto', // Ensure 'right' is 'auto' to prevent conflicts
+                    right: 'auto'
                 }]}
                 textStyle={styles.overlayButtonText}
                 textColor={defaultTheme}
@@ -683,7 +666,8 @@ const ResponderMapScreen = ({
                             region.latitude,
                             region.longitude,
                             newCoordinates.latitude,
-                            newCoordinates.longitude
+                            newCoordinates.longitude,
+                            true
                         )
                         moveCamera(region.latitude, region.longitude);
                     }

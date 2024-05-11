@@ -142,9 +142,10 @@ const MapScreen = ({
   const [routes, setRoutes] = useState([]);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [newCoordinates, setNewCoordinates] = useState(null)
-  console.log("New coordinates", newCoordinates);
   const [decodedCoordinates, setDecodedCoordinates] = useState([]);
-  console.log("routes", routes);
+
+  //console.log("New coordinates", newCoordinates);
+  //console.log("routes", routes);
   console.log("decoded", decodedCoordinates);
 
 
@@ -175,15 +176,12 @@ const MapScreen = ({
         }
       ));
 
-      const subscription = await Location.watchPositionAsync(
-        {
-          enableHighAccuracy: true,
-          distanceInterval: 5
-        },
-        (newLocation) => {
-          updateLocation(newLocation);
-        }
-      );
+      const subscription = await Location.watchPositionAsync({
+        enableHighAccuracy: true,
+        distanceInterval: 5
+      }, (newLocation) => {
+        updateLocation(newLocation);
+      });
 
     } catch (error) {
       toast(error.message);
@@ -205,18 +203,30 @@ const MapScreen = ({
       }
     ));
     moveCamera(location?.coords.latitude, location?.coords.longitude);
-    updateRoute(location?.coords.latitude, location?.coords.longitude);
 
     console.log("Watch new position", location);
     console.log("New address", newAddress[0]);
 
     if (acceptedRequest && (region.latitude !== location.coords.latitude || region.longitude !== location.coords.longitude)) {
-      updateUserLocationToDB(
+      await updateUserLocationToDB(
         location.coords.latitude,
         location.coords.longitude,
         acceptedRequest.id
       );
     }
+
+    //Keep track the routes
+    if (decodedCoordinates.length > 0) {
+      await createRoute(
+        location.coords.latitude,
+        location.coords.longitude,
+        newCoordinates.latitude,
+        newCoordinates.longitude,
+      )
+
+      console.log("Re-create route");
+    }
+
   };
 
   const requestEmergency = async () => {
@@ -354,9 +364,12 @@ const MapScreen = ({
     }
   };
 
-  const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong) => {
-    console.log("new coordinates", newCoordinates);
-    setIsRoute(true);
+  const createRoute = async (myLocationLat, myLocationLong, destinationLat, destinationLong, isSetRoute = false) => {
+    //console.log("new coordinates", newCoordinates);
+    if (isSetRoute) {
+      setIsRoute(isSetRoute);
+    }
+
     try {
       let originCoord = `${myLocationLong},${myLocationLat}`;
       let destinationCoord = `${destinationLong},${destinationLat}`;
@@ -388,45 +401,6 @@ const MapScreen = ({
       setIsRoute(false);
     }
   }
-
-  // Function to calculate distance between two points
-  function distance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180; // Convert degrees to radians
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-  }
-
-
-  const updateRoute = (myLatitude, myLongitude) => {
-    console.log("UpdateRoute current loc latitude:", myLatitude, " longitude:", myLongitude);
-    const distanceThreshold = 0.05; // Adjust as needed
-    const direction = [...decodedCoordinates];
-
-    // Calculate distance between current location and the first coordinate
-    const dist = distance(
-      myLatitude,
-      myLongitude,
-      direction[0]?.latitude,
-      direction[0]?.longitude
-    );
-    console.log("dist", dist);
-
-    // If the distance is less than the threshold, remove the first coordinate
-    if (dist <= distanceThreshold) {
-      direction.shift();
-      setDecodedCoordinates(direction);
-      console.log("Updated route:", direction);
-    } else {
-      console.log("Still on track.");
-    }
-  };
 
   const getRequestedCategory = async (category) => {
     setLoadingCategory(true);
@@ -751,7 +725,8 @@ const MapScreen = ({
               region.latitude,
               region.longitude,
               newCoordinates.latitude,
-              newCoordinates.longitude
+              newCoordinates.longitude,
+              true
             )
             moveCamera(region.latitude, region.longitude);
           }

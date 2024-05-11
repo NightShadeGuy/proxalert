@@ -217,8 +217,7 @@ const StackNavigator = () => {
             headerTintColor: 'white'
           }}
         >
-          {
-            () => isResponder
+          {() => isResponder
               ? (
                 <ResponderMapScreen
                   user={user}
